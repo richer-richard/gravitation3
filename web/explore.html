@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌌</text></svg>">
+    <title>Gravitation³ - Explore Simulations</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="nav.css">
+    <script defer src="../shared/browser-support.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .explore-container {
+            min-height: calc(100vh - 70px);
+            margin-top: 70px;
+            padding: 4rem 2rem;
+            background: radial-gradient(ellipse at center, #1a1f3a 0%, #0a0e27 100%);
+        }
+
+        .explore-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .explore-title {
+            font-size: 3rem;
+            font-weight: 700;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            animation: fadeInUp 1s ease;
+        }
+
+        .explore-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            animation: fadeInUp 1s ease 0.2s both;
+        }
+
+        .sims-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            padding: 0 2rem;
+        }
+
+        .sim-card {
+            background: var(--bg-overlay, rgba(255, 255, 255, 0.05));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            transition: opacity 0.6s ease, transform 0.6s ease, background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+            display: block;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .sim-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .sim-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-accent);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .sim-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-blue);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
+        }
+
+        .sim-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .sim-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .sim-name {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .sim-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .sim-status.available {
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--accent-blue);
+            border: 1px solid var(--accent-blue);
+        }
+
+        .sim-status.coming-soon {
+            background: rgba(236, 72, 153, 0.2);
+            color: var(--accent-pink);
+            border: 1px solid var(--accent-pink);
+        }
+
+        .sim-description {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .sim-arrow {
+            color: var(--accent-blue);
+            font-size: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .sim-card:hover .sim-arrow {
+            transform: translateX(5px);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .explore-title {
+                font-size: 2rem;
+            }
+
+            .sims-grid {
+                grid-template-columns: 1fr;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Ribbon -->
+    <nav class="nav-ribbon">
+        <div class="nav-left">
+            <a href="index.html" class="nav-logo">
+                <h1>Gravitation<sup>3</sup></h1>
+            </a>
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="explore.html">
+                        <span class="nav-icon">🔭</span>
+                        <span>Explore Sims</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="ai.html">
+                        <span class="nav-icon">🤖</span>
+                        <span>AI & ML</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="about.html">
+                        <span class="nav-icon">ℹ️</span>
+                        <span>About</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="docs.html">
+                        <span class="nav-icon">📚</span>
+                        <span>Documentation and Guides</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="mission.html">
+                        <span class="nav-icon">🎯</span>
+                        <span>Mission</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="support.html">
+                        <span class="nav-icon">💬</span>
+                        <span>Support</span>
+                    </a>
+                </li>
+            </ul>
+            <button class="mobile-menu-toggle">☰</button>
+        </div>
+    </nav>
+
+    <!-- Explore Content -->
+    <div class="explore-container">
+        <div class="explore-header">
+            <h1 class="explore-title">Explore Simulations</h1>
+            <p class="explore-subtitle">Dive into the fascinating world of chaotic systems and complex dynamics</p>
+        </div>
+
+        <div class="sims-grid">
+            <!-- Three-Body Problem Card -->
+            <a href="../three-body/index.html" class="sim-card">
+                <span class="sim-icon">🌌</span>
+                <h2 class="sim-name">Three-Body Problem</h2>
+                <span class="sim-status available">Available</span>
+                <p class="sim-description">
+                    Explore the chaotic dance of celestial mechanics with three gravitationally interacting masses.
+                    Features RK4 integration, famous presets, and real-time 3D visualization.
+                </p>
+                <span class="sim-arrow">→</span>
+            </a>
+
+            <!-- Double Pendulum Card -->
+            <a href="../double-pendulum/index.html" class="sim-card">
+                <span class="sim-icon">⚛️</span>
+                <h2 class="sim-name">Double Pendulum</h2>
+                <span class="sim-status available">Available</span>
+                <p class="sim-description">
+                    Watch chaos emerge from simple mechanics! The double pendulum demonstrates extreme sensitivity
+                    to initial conditions in a mesmerizing display.
+                </p>
+                <span class="sim-arrow">→</span>
+            </a>
+
+            <!-- Lorenz Attractor Card -->
+            <a href="../lorenz-attractor/index.html" class="sim-card">
+                <span class="sim-icon">🦋</span>
+                <h2 class="sim-name">Lorenz Attractor</h2>
+                <span class="sim-status available">Available</span>
+                <p class="sim-description">
+                    Experience the butterfly effect through Edward Lorenz's famous strange attractor.
+                    Tiny changes lead to dramatically different trajectories.
+                </p>
+                <span class="sim-arrow">→</span>
+            </a>
+
+            <!-- Rössler Attractor Card -->
+            <a href="../rossler-attractor/index.html" class="sim-card">
+                <span class="sim-icon">🌀</span>
+                <h2 class="sim-name">Rössler Attractor</h2>
+                <span class="sim-status available">Available</span>
+                <p class="sim-description">
+                    Discover Otto Rössler's elegant continuous-time chaotic system. Features a single
+                    lobe structure and periodic orbits that create beautiful spiral patterns.
+                </p>
+                <span class="sim-arrow">→</span>
+            </a>
+
+            <!-- Double-Gyre Flow Card -->
+            <a href="../double-gyre/index.html" class="sim-card">
+                <span class="sim-icon">🌊</span>
+                <h2 class="sim-name">Double-Gyre Flow</h2>
+                <span class="sim-status available">Available</span>
+                <p class="sim-description">
+                    Explore two counter-rotating ocean gyres. Watch particles reveal chaotic mixing
+                    zones and transport patterns in this canonical oceanic model.
+                </p>
+                <span class="sim-arrow">→</span>
+            </a>
+
+            <!-- Malkus Waterwheel Card -->
+            <a href="../malkus-waterwheel/index.html" class="sim-card">
+                <span class="sim-icon">🎡</span>
+                <h2 class="sim-name">Malkus Waterwheel</h2>
+                <span class="sim-status available">Available</span>
+                <p class="sim-description">
+                    Watch a simple waterwheel exhibit Lorenz-like chaos! As water drips into buckets,
+                    the system can spin steadily, oscillate, or move chaotically.
+                </p>
+                <span class="sim-arrow">→</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Background Music -->
+    <audio id="bg-music" loop>
+        <source src="music/joan of arc. - barnes blvd.flac" type="audio/flac">
+        <source src="music/joan of arc. - barnes blvd.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Music Player Button -->
+    <button id="music-toggle" aria-label="Toggle background music">
+        <svg class="music-icon-unmuted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v18c-5 0-8.96-4.03-8.96-9S7 3 12 3zm0 0c5 0 9 4.03 9 9s-4 9-9 9" />
+            <path d="M15 9l4 3-4 3" />
+        </svg>
+        <svg class="music-icon-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v18c-5 0-8.96-4.03-8.96-9S7 3 12 3z" />
+            <path d="M17 9l5 5m0-5l-5 5" stroke="currentColor" stroke-width="2" />
+        </svg>
+    </button>
+
+    <script src="music-player.js"></script>
+    <script>
+        // Mobile menu toggle
+        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+        const navLinksLeft = document.querySelector('.nav-left .nav-links');
+        const navLinksRight = document.querySelector('.nav-right .nav-links');
+
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', () => {
+                navLinksLeft.classList.toggle('active');
+                navLinksRight.classList.toggle('active');
+            });
+        }
+
+        // Scroll-triggered animations
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.15
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        // Observe all sim cards
+        document.querySelectorAll('.sim-card').forEach(card => {
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>

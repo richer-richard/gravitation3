@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Malkus Waterwheel - Gravitation³</title>
+    <link rel="stylesheet" href="../web/style.css">
+    <link rel="stylesheet" href="../web/nav.css">
+    <link rel="stylesheet" href="../shared/ai-chatbot.css">
+    <script defer src="../shared/browser-support.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--space-gradient);
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        .sim-header {
+            position: fixed;
+            top: 70px;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--surface-glass, rgba(10, 14, 39, 0.95));
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+            z-index: 1000;
+        }
+
+        .sim-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #00d4ff 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-info {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .info-item .label {
+            font-size: 0.75rem;
+            color: #7d8794;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .info-item .value {
+            font-size: 1.1rem;
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        .multi-wheel-container {
+            position: fixed;
+            top: 130px;
+            left: 0;
+            right: 360px;
+            bottom: 0;
+            display: grid;
+            gap: 2px;
+            background: var(--bg-overlay, rgba(255, 255, 255, 0.05));
+        }
+
+        .multi-wheel-container.wheels-2 {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .multi-wheel-container.wheels-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: var(--surface-glass, rgba(10, 14, 39, 0.95));
+        }
+
+        .wheel-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid rgba(0, 212, 255, 0.5);
+            color: #00d4ff;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .control-panel {
+            position: fixed;
+            top: 130px;
+            right: 0;
+            width: 360px;
+            height: calc(100vh - 130px);
+            background: rgba(26, 31, 58, 0.95);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            overflow-y: auto;
+            z-index: 50;
+        }
+
+        .panel-section {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+        }
+
+        .panel-section h3 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: #00d4ff;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        button {
+            padding: 0.75rem;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: #00d4ff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        button:hover:not(:disabled) {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            transform: translateY(-2px);
+        }
+
+        button.active {
+            background: rgba(0, 212, 255, 0.3);
+            border-color: #00d4ff;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .preset-btn {
+            padding: 0.75rem;
+            background: var(--bg-overlay, rgba(255, 255, 255, 0.05));
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            color: #e0e6ed;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: #b0b7c3;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-group input[type="number"] {
+            width: 100%;
+            padding: 0.5rem;
+            background: var(--bg-overlay, rgba(255, 255, 255, 0.05));
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            border-radius: 6px;
+            color: #e0e6ed;
+            font-size: 0.9rem;
+        }
+
+        .input-group input[type="number"]:focus {
+            outline: none;
+            border-color: #00d4ff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .slider-group {
+            margin-bottom: 1rem;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color: #b0b7c3;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: var(--bg-overlay, rgba(255, 255, 255, 0.1));
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #00d4ff;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .multi-wheel-container {
+                right: 0;
+                bottom: 50vh;
+                grid-template-columns: 1fr !important;
+                grid-template-rows: repeat(auto-fit, minmax(0, 1fr));
+            }
+
+            .control-panel {
+                top: auto;
+                bottom: 0;
+                width: 100%;
+                height: 50vh;
+                border-left: none;
+                border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Ribbon -->
+    <nav class="nav-ribbon">
+        <div class="nav-left">
+            <a href="../web/index.html" class="nav-logo">
+                <h1>Gravitation<sup>3</sup></h1>
+            </a>
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="../web/explore.html">
+                        <span class="nav-icon">🔭</span>
+                        <span>Explore Sims</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/ai.html">
+                        <span class="nav-icon">🤖</span>
+                        <span>AI & ML</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="../web/about.html">
+                        <span class="nav-icon">ℹ️</span>
+                        <span>About</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/docs.html">
+                        <span class="nav-icon">📚</span>
+                        <span>Documentation and Guides</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/mission.html">
+                        <span class="nav-icon">🎯</span>
+                        <span>Mission</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/support.html">
+                        <span class="nav-icon">💬</span>
+                        <span>Support</span>
+                    </a>
+                </li>
+            </ul>
+            <button class="mobile-menu-toggle">☰</button>
+        </div>
+    </nav>
+
+    <!-- Simulation Header -->
+    <header class="sim-header">
+        <div class="sim-title">Malkus Waterwheel - Mechanical Chaos</div>
+        <div class="header-info">
+            <div class="info-item">
+                <span class="label">Time</span>
+                <span id="time-display" class="value">0.00</span>
+            </div>
+            <div class="info-item">
+                <span class="label">FPS</span>
+                <span id="fps-display" class="value">60</span>
+            </div>
+            <div class="info-item">
+                <span class="label">ω (rad/s)</span>
+                <span id="omega-display" class="value">0.000</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Total Water</span>
+                <span id="mass-display" class="value">0.00</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Multi-Wheel Container -->
+    <div id="multi-wheel-container" class="multi-wheel-container wheels-2">
+        <div id="canvas-container-1" class="canvas-container">
+            <div class="wheel-label">Wheel 1</div>
+        </div>
+        <div id="canvas-container-2" class="canvas-container">
+            <div class="wheel-label">Wheel 2</div>
+        </div>
+        <div id="canvas-container-3" class="canvas-container" style="display: none;">
+            <div class="wheel-label">Wheel 3</div>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <div class="panel-section">
+            <h3>Multi-Wheel Control</h3>
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Number of Wheels</span>
+                    <span id="num-wheels-value">2</span>
+                </div>
+                <input type="range" id="num-wheels-slider" min="2" max="3" step="1" value="2">
+            </div>
+        </div>
+
+        <div class="panel-section">
+            <h3>Simulation Control</h3>
+            <div class="button-group">
+                <button id="play-btn">▶ Start All</button>
+                <button id="pause-btn" disabled>⏸ Pause All</button>
+                <button id="reset-btn">↻ Reset All</button>
+            </div>
+        </div>
+
+        <div class="panel-section">
+            <h3>Presets (All Wheels)</h3>
+            <div class="button-group">
+                <button class="preset-btn active" data-preset="chaotic">Chaotic</button>
+                <button class="preset-btn" data-preset="periodic">Periodic</button>
+                <button class="preset-btn" data-preset="steady">Steady</button>
+                <button class="preset-btn" data-preset="reversals">Reversals</button>
+            </div>
+        </div>
+
+
+        <div class="panel-section">
+            <h3>Global Speed</h3>
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Simulation Speed</span>
+                    <span id="speed-value">1.0x</span>
+                </div>
+                <input type="range" id="speed-slider" min="0.1" max="5" step="0.1" value="1">
+            </div>
+        </div>
+
+        <div class="panel-section">
+            <h3>Wheel 1</h3>
+            <div class="button-group" style="margin-bottom: 1rem;">
+                <button class="wheel-play-btn" data-wheel="1">▶ Start</button>
+                <button class="wheel-pause-btn" data-wheel="1" disabled>⏸ Pause</button>
+            </div>
+            <div class="input-group">
+                <label>Q - Water Inflow Rate</label>
+                <input type="number" class="wheel-param" data-wheel="1" data-param="q" step="0.1" value="2.50">
+            </div>
+            <div class="input-group">
+                <label>K - Leak Rate</label>
+                <input type="number" class="wheel-param" data-wheel="1" data-param="k" step="0.1" value="0.10">
+            </div>
+            <div class="input-group">
+                <label>ν (nu) - Damping</label>
+                <input type="number" class="wheel-param" data-wheel="1" data-param="nu" step="0.1" value="1.00">
+            </div>
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Buckets</span>
+                    <span class="wheel-buckets-display" data-wheel="1">20</span>
+                </div>
+                <input type="range" class="wheel-param" data-wheel="1" data-param="buckets" min="8" max="32" step="1" value="20">
+            </div>
+            <button class="apply-wheel-btn" data-wheel="1" style="width: 100%;">Apply Parameters</button>
+        </div>
+
+        <div class="panel-section">
+            <h3>Wheel 2</h3>
+            <div class="button-group" style="margin-bottom: 1rem;">
+                <button class="wheel-play-btn" data-wheel="2">▶ Start</button>
+                <button class="wheel-pause-btn" data-wheel="2" disabled>⏸ Pause</button>
+            </div>
+            <div class="input-group">
+                <label>Q - Water Inflow Rate</label>
+                <input type="number" class="wheel-param" data-wheel="2" data-param="q" step="0.1" value="2.50">
+            </div>
+            <div class="input-group">
+                <label>K - Leak Rate</label>
+                <input type="number" class="wheel-param" data-wheel="2" data-param="k" step="0.1" value="0.10">
+            </div>
+            <div class="input-group">
+                <label>ν (nu) - Damping</label>
+                <input type="number" class="wheel-param" data-wheel="2" data-param="nu" step="0.1" value="1.00">
+            </div>
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Buckets</span>
+                    <span class="wheel-buckets-display" data-wheel="2">20</span>
+                </div>
+                <input type="range" class="wheel-param" data-wheel="2" data-param="buckets" min="8" max="32" step="1" value="20">
+            </div>
+            <button class="apply-wheel-btn" data-wheel="2" style="width: 100%;">Apply Parameters</button>
+        </div>
+
+        <div class="panel-section" id="wheel-3-params" style="display: none;">
+            <h3>Wheel 3</h3>
+            <div class="button-group" style="margin-bottom: 1rem;">
+                <button class="wheel-play-btn" data-wheel="3">▶ Start</button>
+                <button class="wheel-pause-btn" data-wheel="3" disabled>⏸ Pause</button>
+            </div>
+            <div class="input-group">
+                <label>Q - Water Inflow Rate</label>
+                <input type="number" class="wheel-param" data-wheel="3" data-param="q" step="0.1" value="2.50">
+            </div>
+            <div class="input-group">
+                <label>K - Leak Rate</label>
+                <input type="number" class="wheel-param" data-wheel="3" data-param="k" step="0.1" value="0.10">
+            </div>
+            <div class="input-group">
+                <label>ν (nu) - Damping</label>
+                <input type="number" class="wheel-param" data-wheel="3" data-param="nu" step="0.1" value="1.00">
+            </div>
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Buckets</span>
+                    <span class="wheel-buckets-display" data-wheel="3">20</span>
+                </div>
+                <input type="range" class="wheel-param" data-wheel="3" data-param="buckets" min="8" max="32" step="1" value="20">
+            </div>
+            <button class="apply-wheel-btn" data-wheel="3" style="width: 100%;">Apply Parameters</button>
+        </div>
+
+        <div class="panel-section">
+            <h3>Display Options</h3>
+            <label class="checkbox-group">
+                <input type="checkbox" id="show-water" checked>
+                <span>Show Water</span>
+            </label>
+            <label class="checkbox-group">
+                <input type="checkbox" id="show-com" checked>
+                <span>💫 Show Center of Mass</span>
+            </label>
+            <label class="checkbox-group">
+                <input type="checkbox" id="show-com-trail" checked>
+                <span>📍 Show COM Trail</span>
+            </label>
+            <button id="clear-com-trail-btn" style="width: 100%; margin-bottom: 0.75rem;">Clear COM Trail</button>
+            <label class="checkbox-group">
+                <input type="checkbox" id="auto-rotate">
+                <span>Auto Rotate Camera</span>
+            </label>
+            <label class="checkbox-group">
+                <input type="checkbox" id="track-bucket">
+                <span>🎯 Track Bucket (Follow Bucket #1)</span>
+            </label>
+            <button id="reset-camera-btn" style="width: 100%; margin-top: 0.5rem;">📷 Reset Camera</button>
+        </div>
+
+        <div class="panel-section">
+            <h3>About This System</h3>
+            <p style="font-size: 0.85rem; color: #b0b7c3; line-height: 1.6;">
+                The Malkus Waterwheel demonstrates how a simple mechanical system can exhibit 
+                chaos analogous to the Lorenz attractor. Water drips into buckets on a wheel 
+                that can freely rotate. The buckets have holes, so water leaks out. Depending 
+                on parameters, the wheel can spin steadily, oscillate periodically, or move 
+                chaotically with unpredictable direction reversals.
+            </p>
+            <p style="font-size: 0.85rem; color: #b0b7c3; line-height: 1.6; margin-top: 1rem;">
+                <strong>Multi-Wheel Mode:</strong> Compare different parameter sets side-by-side 
+                to see how varying conditions affect the system's behavior. Each wheel can be 
+                customized independently using its own parameter section.
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer Info -->
+    <footer class="footer">
+        <p>
+            <strong>Gravitation³</strong> • Malkus Waterwheel Simulator 
+            • Mechanical chaos demonstrations • 
+            <a href="https://github.com" target="_blank">View on GitHub</a>
+        </p>
+    </footer>
+
+    <!-- Background Music -->
+    <audio id="bg-music" loop preload="auto">
+        <source src="../web/music/joan of arc. - barnes blvd.flac" type="audio/flac">
+    </audio>
+
+    <!-- Music Toggle Button -->
+    <button id="music-toggle" class="muted" title="Toggle Background Music">
+        <svg class="music-icon-unmuted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+        </svg>
+        <svg class="music-icon-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+    </button>
+
+    <!-- Scripts -->
+    <script src="../shared/server-helper.js"></script>
+    <script src="../shared/ai-chatbot.js"></script>
+    <script src="simulator.js"></script>
+    <script src="visualizer.js"></script>
+    <script src="app.js"></script>
+    <script src="../web/music-player.js"></script>
+    <script>
+        // Mobile menu toggle
+        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+        const navLinks = document.querySelector('.nav-links');
+
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+        }
+    </script>
+    <script>
+        if (window.AIChat) {
+            window.AIChat.configure({
+                simulationName: 'Malkus-Waterwheel',
+                dataSource: window.simulator || null
+            });
+        }
+    </script>
+</body>
+</html>

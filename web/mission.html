@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌌</text></svg>">
+    <title>Gravitation³ - Mission & Vision</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="nav.css">
+    <script defer src="../shared/browser-support.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .mission-container {
+            min-height: calc(100vh - 70px);
+            margin-top: 70px;
+            padding: 4rem 2rem;
+            background: radial-gradient(ellipse at center, #1a1f3a 0%, #0a0e27 100%);
+        }
+
+        .mission-content {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .mission-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .mission-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            animation: fadeInUp 1s ease;
+        }
+
+        .mission-subtitle {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            animation: fadeInUp 1s ease 0.2s both;
+            line-height: 1.6;
+        }
+
+        .mission-section {
+            background: var(--bg-overlay, rgba(255, 255, 255, 0.05));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 3rem;
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease, background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .mission-section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .mission-section:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-blue);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.15);
+        }
+
+        .section-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .section-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .section-text {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            line-height: 1.9;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-text strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .highlight-box {
+            background: rgba(0, 212, 255, 0.1);
+            border-left: 4px solid var(--accent-blue);
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: var(--radius-md);
+        }
+
+        .highlight-box p {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        .features-list {
+            list-style: none;
+            padding: 0;
+            margin: 1.5rem 0;
+        }
+
+        .features-list li {
+            padding: 1rem 0;
+            padding-left: 2.5rem;
+            position: relative;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.7;
+        }
+
+        .features-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--accent-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .ai-capabilities {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .capability-card {
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .capability-card:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: var(--accent-blue);
+            transform: translateY(-3px);
+        }
+
+        .capability-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .capability-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .capability-desc {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mission-title {
+                font-size: 2.5rem;
+            }
+
+            .mission-section {
+                padding: 2rem;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .ai-capabilities {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Ribbon -->
+    <nav class="nav-ribbon">
+        <div class="nav-left">
+            <a href="index.html" class="nav-logo">
+                <h1>Gravitation<sup>3</sup></h1>
+            </a>
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="explore.html">
+                        <span class="nav-icon">🔭</span>
+                        <span>Explore Sims</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="ai.html">
+                        <span class="nav-icon">🤖</span>
+                        <span>AI & ML</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="about.html">
+                        <span class="nav-icon">ℹ️</span>
+                        <span>About</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="docs.html">
+                        <span class="nav-icon">📚</span>
+                        <span>Documentation and Guides</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="mission.html">
+                        <span class="nav-icon">🎯</span>
+                        <span>Mission</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="support.html">
+                        <span class="nav-icon">💬</span>
+                        <span>Support</span>
+                    </a>
+                </li>
+            </ul>
+            <button class="mobile-menu-toggle">☰</button>
+        </div>
+    </nav>
+
+    <!-- Mission Content -->
+    <div class="mission-container">
+        <div class="mission-content">
+            <div class="mission-header">
+                <h1 class="mission-title">Mission & Vision</h1>
+                <p class="mission-subtitle">
+                    Understanding our purpose, impact, and the role of AI in making complex systems accessible to everyone
+                </p>
+            </div>
+
+            <div class="mission-section">
+                <span class="section-icon">🚀</span>
+                <h2 class="section-title">
+                    <span class="section-number">1</span>
+                    Why We're Building This
+                </h2>
+                <p class="section-text">
+                    <strong>Gravitation³</strong> started with a simple complaint: every time we tried to explain chaotic motion, we ended up 
+                    waving our hands at a chalkboard and saying “imagine this curve wobbling forever.” Students deserve more than an invitation 
+                    to imagine—they deserve to see the motion, drag a body, and feel why the math matters.
+                </p>
+                <p class="section-text">
+                    Traditional lessons still treat chaotic systems as a footnote: memorize the equation, maybe watch a low-res animation, then move on. 
+                    That approach teaches symbols without intuition. Until you see how sensitive everything is to a nudge, the “aha” moment never lands.
+                </p>
+                <div class="highlight-box">
+                    <p>
+                        <strong>The gap we aim to close:</strong> interactive, trustworthy simulations are either locked behind lab software or rigid tools that can't be tweaked. 
+                        Curious learners everywhere end up staring at static diagrams when they should be experimenting.
+                    </p>
+                </div>
+                <p class="section-text">
+                    So we built <strong>Gravitation³</strong> as a flexible sandbox. Start with a preset, break it immediately, and watch what happens. 
+                    The visuals pull you in, the controls keep you tinkering, and the math reveals itself along the way.
+                </p>
+                <p class="section-text">
+                    Our vision is straightforward: <strong>make nonlinear dynamics part of everyday scientific literacy</strong>. You shouldn’t need a research workstation or graduate coursework to appreciate a figure-eight orbit or a Lorenz attractor.
+                </p>
+                <p class="section-text">
+                    We believe <strong>anyone should be able to poke at the rules of the universe</strong>—whether that’s the orbit of a satellite or the flutter of a pendulum. 
+                    These systems appear in weather models, robotics labs, and energy grids; hiding them behind paywalls or jargon helps no one.
+                </p>
+                <div class="highlight-box">
+                    <p>
+                        <strong>Our mission:</strong> keep Gravitation³ free, accurate, and inviting so that students, teachers, and hobbyists can explore serious physics with nothing more than a browser and curiosity.
+                    </p>
+                </div>
+                <p class="section-text">
+                    Browser-based labs remove the usual gatekeepers. Share a link, run it on a school Chromebook, or stream it in a lecture hall—the experience is the same. 
+                    Learning becomes less about memorizing formulas and more about prodding the system yourself.
+                </p>
+            </div>
+
+            <div class="mission-section">
+                <span class="section-icon">🌍</span>
+                <h2 class="section-title">
+                    <span class="section-number">2</span>
+                    Real-World Impact & Applications
+                </h2>
+                <p class="section-text">
+                    These simulations might look like digital art, but every one of them mirrors a real system that engineers, scientists, and mission planners wrestle with daily:
+                </p>
+                
+                <ul class="features-list">
+                    <li>
+                        <strong>Space mission planning:</strong> Three-body dynamics shape halo orbits, lunar flybys, and low-fuel transfers. The same math behind our presets keeps missions like JWST parked at L2.
+                    </li>
+                    <li>
+                        <strong>Climate and weather modeling:</strong> Lorenz attractors, double gyres, and convection cells echo the feedback loops inside actual weather models. Watching them evolve builds intuition for why forecasts change.
+                    </li>
+                    <li>
+                        <strong>Engineering dynamics:</strong> Cranes, robotic arms, and suspension bridges all flirt with the same chaotic swings you see in a double pendulum. Knowing how fast things can spiral keeps hardware safe.
+                    </li>
+                    <li>
+                        <strong>Chemical and biological systems:</strong> Oscillating reactions and predator-prey loops look abstract until you realize they mirror cardiac rhythms, neural firing, and ecosystem balance.
+                    </li>
+                    <li>
+                        <strong>Fluid engineering:</strong> Vortex streets and Kelvin–Helmholtz waves inform how we shape aircraft, design exhaust stacks, and keep pipelines stable. The simulator lets you see those instabilities form in real time.
+                    </li>
+                    <li>
+                        <strong>Energy systems:</strong> The Malkus waterwheel is more than a neat toy—it mirrors energy extraction in turbines and hydropower, where chaotic flow can either waste or produce megawatts.
+                    </li>
+                </ul>
+
+                <div class="highlight-box">
+                    <p>
+                        <strong>Educational impact:</strong> Teachers drop these sims into lectures, students run quick experiments before tackling homework, and researchers explore parameter sweeps without wrestling with installs.
+                    </p>
+                </div>
+
+                <p class="section-text">
+                    Above all, we want people to feel what sensitivity to initial conditions actually means. Once you’ve watched a tiny velocity tweak rewrite an orbit, “butterfly effects” stop being a cliché and start informing how you think about economics, epidemiology, or climate policy.
+                </p>
+            </div>
+
+            <div class="mission-section">
+                <span class="section-icon">🤖</span>
+                <h2 class="section-title">
+                    <span class="section-number">3</span>
+                    AI Integration Strategy
+                </h2>
+                <p class="section-text">
+                    AI is useful when it removes friction, not when it becomes the show. We use it sparingly to surface helpful hints, keep simulations smooth, and highlight behaviors you might have missed:
+                </p>
+
+                <div class="ai-capabilities">
+                    <div class="capability-card">
+                        <div class="capability-icon">🎓</div>
+                        <div class="capability-title">Intelligent Tutoring</div>
+                        <div class="capability-desc">
+                            Short, contextual tips that match what you’re currently adjusting—no lecture, just enough guidance to connect the slider you touched to the physics underneath.
+                        </div>
+                    </div>
+
+                    <div class="capability-card">
+                        <div class="capability-icon">🔍</div>
+                        <div class="capability-title">Pattern Recognition</div>
+                        <div class="capability-desc">
+                            Background jobs look for repeating orbits, drifts, or bifurcations and flag them so you can bookmark interesting runs instead of scanning plots for hours.
+                        </div>
+                    </div>
+
+                    <div class="capability-card">
+                        <div class="capability-icon">⚡</div>
+                        <div class="capability-title">Adaptive Optimization</div>
+                        <div class="capability-desc">
+                            Lightweight models nudge the integrator step size and renderer quality in real time, keeping motion crisp on slow laptops without sacrificing accuracy.
+                        </div>
+                    </div>
+
+                    <div class="capability-card">
+                        <div class="capability-icon">🎨</div>
+                        <div class="capability-title">Generative Art</div>
+                        <div class="capability-desc">
+                            When you capture footage, AI-suggested camera paths and palettes help showcase the dynamics clearly while staying true to the data.
+                        </div>
+                    </div>
+
+                    <div class="capability-card">
+                        <div class="capability-icon">📊</div>
+                        <div class="capability-title">Predictive Analytics</div>
+                        <div class="capability-desc">
+                            Classifiers estimate when a system is about to leave a stable state, giving you a heads-up to pause, annotate, or export the run.
+                        </div>
+                    </div>
+
+                    <div class="capability-card">
+                        <div class="capability-icon">💡</div>
+                        <div class="capability-title">Smart Presets</div>
+                        <div class="capability-desc">
+                            Session history informs preset suggestions, so beginners see gentle introductions while advanced users jump straight into wild parameter sets.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="highlight-box" style="margin-top: 2rem;">
+                    <p>
+                        <strong>Responsibility first:</strong> every AI-assisted feature stays explainable, optional, and grounded in verifiable simulation data. If it can’t point back to the physics, it doesn’t ship.
+                    </p>
+                </div>
+
+                <p class="section-text" style="margin-top: 1.5rem;">
+                    Next up: blending classical integrators with learned corrections for bursts of speed, and using AI to scan huge parameter spaces for behaviors we haven’t labeled yet.
+                </p>
+
+                <p class="section-text">
+                    The rule of thumb is simple—AI can help you explore faster, but it should never hide the underlying system. If it doesn’t make chaos easier to appreciate, it’s out.
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+        const navLinksLeft = document.querySelector('.nav-left .nav-links');
+        const navLinksRight = document.querySelector('.nav-right .nav-links');
+
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', () => {
+                navLinksLeft.classList.toggle('active');
+                navLinksRight.classList.toggle('active');
+            });
+        }
+
+        // Scroll-triggered animations
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.15
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        // Observe all mission sections
+        document.querySelectorAll('.mission-section').forEach(section => {
+            observer.observe(section);
+        });
+    </script>
+
+    <!-- Background Music -->
+    <audio id="bg-music" loop>
+        <source src="music/joan of arc. - barnes blvd.flac" type="audio/flac">
+        <source src="music/joan of arc. - barnes blvd.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Music Player Button -->
+    <button id="music-toggle" aria-label="Toggle background music">
+        <svg class="music-icon-unmuted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v18c-5 0-8.96-4.03-8.96-9S7 3 12 3zm0 0c5 0 9 4.03 9 9s-4 9-9 9" />
+            <path d="M15 9l4 3-4 3" />
+        </svg>
+        <svg class="music-icon-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v18c-5 0-8.96-4.03-8.96-9S7 3 12 3z" />
+            <path d="M17 9l5 5m0-5l-5 5" stroke="currentColor" stroke-width="2" />
+        </svg>
+    </button>
+
+    <script src="music-player.js"></script>
+</body>
+</html>

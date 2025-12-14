@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Double-Gyre Flow - Gravitation³</title>
+    <link rel="stylesheet" href="../web/style.css">
+    <link rel="stylesheet" href="../web/nav.css">
+    <link rel="stylesheet" href="../shared/ai-chatbot.css">
+    <script defer src="../shared/browser-support.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--space-gradient);
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        .sim-header {
+            position: fixed;
+            top: 70px;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--surface-glass, rgba(10, 14, 39, 0.95));
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+            z-index: 1000;
+        }
+
+        .sim-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #00d4ff 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-info {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .info-item .label {
+            font-size: 0.75rem;
+            color: #7d8794;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .info-item .value {
+            font-size: 1.1rem;
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 130px;
+            left: 0;
+            right: 360px;
+            bottom: 0;
+            background: #0a0e27;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .control-panel {
+            position: fixed;
+            top: 130px;
+            right: 0;
+            width: 360px;
+            height: calc(100vh - 130px);
+            background: rgba(26, 31, 58, 0.95);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            overflow-y: auto;
+            z-index: 50;
+        }
+
+        .panel-section {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+        }
+
+        .panel-section h3 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: #00d4ff;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        button {
+            padding: 0.75rem;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: #00d4ff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        button:hover:not(:disabled) {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            transform: translateY(-2px);
+        }
+
+        button.active {
+            background: rgba(0, 212, 255, 0.3);
+            border-color: #00d4ff;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .preset-btn {
+            padding: 0.75rem;
+            background: var(--bg-overlay, rgba(255, 255, 255, 0.05));
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            color: #e0e6ed;
+        }
+
+        .slider-group {
+            margin-bottom: 1rem;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color: #b0b7c3;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: var(--bg-overlay, rgba(255, 255, 255, 0.1));
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #00d4ff;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        /* AI Status Indicator */
+        .ai-status {
+            position: fixed;
+            bottom: 20px;
+            right: 380px;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: var(--surface-glass, rgba(10, 14, 39, 0.95));
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(124, 58, 237, 0.3);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .ai-status.active {
+            border-color: rgba(124, 58, 237, 1);
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.6),
+                        0 0 60px rgba(236, 72, 153, 0.3),
+                        0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: aiPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes aiPulse {
+            0%, 100% {
+                box-shadow: 0 0 30px rgba(124, 58, 237, 0.6),
+                            0 0 60px rgba(236, 72, 153, 0.3),
+                            0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(124, 58, 237, 0.8),
+                            0 0 80px rgba(236, 72, 153, 0.5),
+                            0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        .ai-status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #6b7280;
+            transition: all 0.3s ease;
+        }
+
+        .ai-status.connected .ai-status-dot {
+            background: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
+        }
+
+        .ai-status.active .ai-status-dot {
+            background: #7c3aed;
+            box-shadow: 0 0 15px rgba(124, 58, 237, 1);
+            animation: dotPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes dotPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        .ai-status-text {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .ai-status.connected .ai-status-text {
+            color: #10b981;
+        }
+
+        .ai-status.active .ai-status-text {
+            background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
+        }
+
+        .ai-status-label {
+            color: #64748b;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Canvas glow when AI is active */
+        #canvas-container.ai-active {
+            box-shadow: inset 0 0 60px rgba(124, 58, 237, 0.2),
+                        0 0 40px rgba(124, 58, 237, 0.3);
+            border: 2px solid rgba(124, 58, 237, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            #canvas-container {
+                right: 0;
+                bottom: 50vh;
+            }
+
+            .control-panel {
+                top: auto;
+                bottom: 0;
+                width: 100%;
+                height: 50vh;
+                border-left: none;
+                border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Ribbon -->
+    <nav class="nav-ribbon">
+        <div class="nav-left">
+            <a href="../web/index.html" class="nav-logo">
+                <h1>Gravitation<sup>3</sup></h1>
+            </a>
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="../web/explore.html">
+                        <span class="nav-icon">🔭</span>
+                        <span>Explore Sims</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/ai.html">
+                        <span class="nav-icon">🤖</span>
+                        <span>AI & ML</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="../web/about.html">
+                        <span class="nav-icon">ℹ️</span>
+                        <span>About</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/docs.html">
+                        <span class="nav-icon">📚</span>
+                        <span>Documentation and Guides</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/mission.html">
+                        <span class="nav-icon">🎯</span>
+                        <span>Mission</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/support.html">
+                        <span class="nav-icon">💬</span>
+                        <span>Support</span>
+                    </a>
+                </li>
+            </ul>
+            <button class="mobile-menu-toggle">☰</button>
+        </div>
+    </nav>
+
+    <!-- Simulation Header -->
+    <header class="sim-header">
+        <div class="sim-title">Double-Gyre Flow - Ocean Circulation Dynamics</div>
+        <div class="header-info">
+            <div class="info-item">
+                <span class="label">Time</span>
+                <span id="time-display" class="value">0.00</span>
+            </div>
+            <div class="info-item">
+                <span class="label">FPS</span>
+                <span id="fps-display" class="value">60</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Particles</span>
+                <span id="particle-count" class="value">0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- AI Status Indicator -->
+        <div>
+            <div class="ai-status-label">AI Model</div>
+            <div class="ai-status-text" id="ai-status-text">Not Connected</div>
+        </div>
+    </div>
+
+    <!-- Canvas -->
+    <div id="canvas-container">
+        <canvas id="main-canvas"></canvas>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <div class="panel-section">
+            <h3>Simulation Control</h3>
+            <div class="button-group">
+                <button id="play-btn">▶ Start</button>
+                <button id="pause-btn" disabled>⏸ Pause</button>
+                <button id="reset-btn">↻ Reset</button>
+                <button id="clear-btn">🗑️ Clear</button>
+            </div>
+        </div>
+
+        <div class="panel-section">
+            <h3>Presets</h3>
+            <div class="button-group">
+                <button class="preset-btn active" data-preset="standard">Standard</button>
+                <button class="preset-btn" data-preset="divergence">Divergence</button>
+                <button class="preset-btn" data-preset="convergence">Convergence</button>
+                <button class="preset-btn" data-preset="chaos">Chaotic</button>
+            </div>
+        </div>
+
+        <div class="panel-section">
+            <h3>Flow Parameters</h3>
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Flow Amplitude (A)</span>
+                    <span id="amplitude-value">0.10</span>
+                </div>
+                <input type="range" id="amplitude-slider" min="0" max="0.3" step="0.01" value="0.1">
+            </div>
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Oscillation Frequency (ω)</span>
+                    <span id="frequency-value">0.50</span>
+                </div>
+                <input type="range" id="frequency-slider" min="0" max="2" step="0.1" value="0.5">
+            </div>
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Perturbation (ε)</span>
+                    <span id="epsilon-value">0.25</span>
+                </div>
+                <input type="range" id="epsilon-slider" min="0" max="0.5" step="0.05" value="0.25">
+            </div>
+        </div>
+
+        <div class="panel-section">
+            <h3>Particle Settings</h3>
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Number of Particles</span>
+                    <span id="particle-num-value">500</span>
+                </div>
+                <input type="range" id="particle-num-slider" min="100" max="2000" step="100" value="500">
+            </div>
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Particle Size</span>
+                    <span id="particle-size-value">2.0</span>
+                </div>
+                <input type="range" id="particle-size-slider" min="1" max="5" step="0.5" value="2">
+            </div>
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Speed</span>
+                    <span id="speed-value">1.0x</span>
+                </div>
+                <input type="range" id="speed-slider" min="0.1" max="5" step="0.1" value="1">
+            </div>
+        </div>
+
+        <div class="panel-section">
+            <h3>Display Options</h3>
+            <label class="checkbox-group">
+                <input type="checkbox" id="show-flow-field" checked>
+                <span>Show Flow Field</span>
+            </label>
+            <label class="checkbox-group">
+                <input type="checkbox" id="show-streamlines">
+                <span>Show Streamlines</span>
+            </label>
+            <label class="checkbox-group">
+                <input type="checkbox" id="show-particles" checked>
+                <span>Show Particles</span>
+            </label>
+            <label class="checkbox-group">
+                <input type="checkbox" id="show-vorticity">
+                <span>Show Vorticity</span>
+            </label>
+            <button id="seed-particles-btn" style="width: 100%; margin-top: 0.5rem;">🌱 Seed Particles</button>
+        </div>
+    </div>
+
+    <!-- Footer Info -->
+    <footer class="footer">
+        <p>
+            <strong>Gravitation³</strong> • Double-Gyre Flow Simulator 
+            • Lagrangian coherent structures • 
+            <a href="https://github.com" target="_blank">View on GitHub</a>
+        </p>
+    </footer>
+
+    <!-- Background Music -->
+    <audio id="bg-music" loop preload="auto">
+        <source src="../web/music/joan of arc. - barnes blvd.flac" type="audio/flac">
+    </audio>
+
+    <!-- Music Toggle Button -->
+    <button id="music-toggle" class="muted" title="Toggle Background Music">
+        <svg class="music-icon-unmuted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+        </svg>
+        <svg class="music-icon-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+    </button>
+
+    <!-- Scripts -->
+    <script src="../shared/server-helper.js"></script>
+    <script src="../shared/ai-chatbot.js"></script>
+    <script src="simulator.js"></script>
+    <script src="visualizer.js"></script>
+    <script src="app.js"></script>
+    <script src="../web/music-player.js"></script>
+    <script>
+        // Mobile menu toggle
+        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+        const navLinks = document.querySelector('.nav-links');
+
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+        }
+    </script>
+    <script>
+        if (window.AIChat) {
+            window.AIChat.configure({
+                simulationName: 'Double-Gyre',
+                dataSource: window.simulator || null
+            });
+        }
+    </script>
+</body>
+</html>

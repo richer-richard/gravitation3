@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌌</text></svg>">
+    <title>Gravitation³ - Model Formulas</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="nav.css">
+    <script defer src="../shared/browser-support.js"></script>
+    
+    <!-- MathJax Configuration -->
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    
+    <style>
+        body { margin: 0; padding: 0; }
+        .docs-container { min-height: calc(100vh - 70px); margin-top: 70px; padding: 4rem 2rem; background: radial-gradient(ellipse at center, #1a1f3a 0%, #0a0e27 100%); }
+        .docs-content { max-width: 1200px; margin: 0 auto; }
+        .docs-header { text-align: center; margin-bottom: 2rem; }
+        .docs-title { font-size: 3rem; font-weight: 700; background: var(--gradient-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 1rem; animation: fadeInUp 1s ease; }
+        .docs-subtitle { font-size: 1.2rem; color: var(--text-secondary); animation: fadeInUp 1s ease 0.2s both; margin-bottom: 2rem; }
+        
+        /* Horizontal Navigation Tabs */
+        .sim-tabs {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+            animation: fadeInUp 1s ease 0.4s both;
+        }
+        
+        .sim-tab {
+            background: var(--bg-overlay, rgba(255, 255, 255, 0.05));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        
+        .sim-tab:hover {
+            background: var(--bg-overlay, rgba(255, 255, 255, 0.1));
+            border-color: var(--accent-blue);
+            color: var(--text-primary);
+        }
+        
+        .sim-tab.active {
+            background: var(--gradient-accent);
+            border-color: var(--accent-blue);
+            color: white;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        /* Content Sections */
+        .sim-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .sim-content.active {
+            display: block;
+        }
+        
+        .docs-section { background: var(--bg-overlay, rgba(255, 255, 255, 0.05)); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 2rem; margin-bottom: 2rem; }
+        .docs-section h2 { font-size: 2rem; font-weight: 600; color: var(--text-primary); margin-bottom: 1rem; border-bottom: 2px solid var(--accent-blue); padding-bottom: 0.5rem; }
+        .docs-section h3 { font-size: 1.5rem; font-weight: 600; color: var(--accent-blue); margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        .docs-section p { font-size: 1.05rem; color: var(--text-secondary); line-height: 1.8; margin-bottom: 1rem; }
+        .docs-section ul { color: var(--text-secondary); line-height: 1.8; margin-left: 1.5rem; margin-bottom: 1rem; }
+        .docs-section ol { color: var(--text-secondary); line-height: 1.8; margin-left: 2rem; margin-bottom: 1rem; padding-left: 0; }
+        .docs-section li { margin-bottom: 0.5rem; }
+        .math-block { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; text-align: center; }
+        .info-box { background: rgba(0, 212, 255, 0.1); border-left: 4px solid var(--accent-blue); padding: 1rem; margin: 1rem 0; border-radius: var(--radius-sm); }
+        .info-box p { margin: 0; }
+        
+        /* MathJax styling */
+        mjx-container { color: #a8dadc !important; }
+        
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        @media (max-width: 768px) { 
+            .docs-title { font-size: 2rem; } 
+            .docs-section { padding: 1.5rem; }
+            .sim-tabs { gap: 0.25rem; }
+            .sim-tab { padding: 0.5rem 1rem; font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-ribbon">
+        <div class="nav-left">
+            <a href="index.html" class="nav-logo"><h1>Gravitation<sup>3</sup></h1></a>
+            <ul class="nav-links">
+                <li class="nav-link"><a href="explore.html"><span class="nav-icon">🔭</span><span>Explore Sims</span></a></li>
+                <li class="nav-link"><a href="ai.html"><span class="nav-icon">🤖</span><span>AI & ML</span></a></li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li class="nav-link"><a href="about.html"><span class="nav-icon">ℹ️</span><span>About</span></a></li>
+                <li class="nav-link"><a href="docs.html"><span class="nav-icon">📚</span><span>Documentation and Guides</span></a></li>
+                <li class="nav-link"><a href="mission.html"><span class="nav-icon">🎯</span><span>Mission</span></a></li>
+                <li class="nav-link"><a href="support.html"><span class="nav-icon">💬</span><span>Support</span></a></li>
+            </ul>
+            <button class="mobile-menu-toggle">☰</button>
+        </div>
+    </nav>
+
+    <div class="docs-container">
+        <div class="docs-content">
+            <div class="docs-header">
+                <h1 class="docs-title">Model Formulas</h1>
+                <p class="docs-subtitle">Mathematical equations and technical details for each simulation</p>
+            </div>
+
+            <!-- Horizontal Navigation Tabs -->
+            <div class="sim-tabs">
+                <button class="sim-tab active" data-sim="three-body">Three-Body Problem</button>
+                <button class="sim-tab" data-sim="double-pendulum">Double Pendulum</button>
+                <button class="sim-tab" data-sim="lorenz">Lorenz Attractor</button>
+                <button class="sim-tab" data-sim="rossler">Rössler Attractor</button>
+                <button class="sim-tab" data-sim="double-gyre">Double-Gyre</button>
+                <button class="sim-tab" data-sim="malkus">Malkus Waterwheel</button>
+            </div>
+
+            <!-- Three-Body Problem Content -->
+            <div class="sim-content active" id="three-body">
+                <div class="docs-section">
+                    <h2>What is Gravity?</h2>
+                    <p>Before we dive into complex simulations, let's start with the basics: <strong>What is gravity?</strong></p>
+                    <p>Imagine you're standing on Earth right now. You're not floating away into space because there's an invisible force pulling you down toward the ground. That force is <strong>gravity</strong>. Gravity is one of nature's fundamental forces, and it works between any two objects that have mass.</p>
+                    <p>Here's the key insight: <strong>Every object with mass attracts every other object with mass</strong>. Right now, you're pulling on Earth, and Earth is pulling on you. You're even pulling on the Moon (though very, very weakly). The Earth and Moon pull on each other too. Everything is pulling on everything else!</p>
+                    
+                    <h3>Why Don't We Notice Gravity Between Small Objects?</h3>
+                    <p>You might wonder: "If I'm pulling on my coffee cup, why doesn't it fly toward me?" The answer is that gravity is extremely weak unless at least one of the objects is very massive. Earth is so massive (about 6,000,000,000,000,000,000,000,000 kg!) that we can easily feel its pull. But the gravitational pull between you and your coffee cup is so tiny that friction and other forces completely overwhelm it.</p>
+                </div>
+
+                <div class="docs-section">
+                    <h2>The Three-Body Problem: A Grand Challenge</h2>
+                    <p>Now that we understand what gravity is, let's talk about the <strong>three-body problem</strong> - one of the most fascinating puzzles in physics.</p>
+                    
+                    <h3>What is the Three-Body Problem?</h3>
+                    <p>Imagine you have three objects in space - maybe three planets, or three stars. They're all pulling on each other with gravity. The question is: <strong>Can we predict where they'll be in the future?</strong></p>
+                    <p>This seems like it should be simple, right? But here's the surprising twist: after hundreds of years of trying, mathematicians have proven that there's no formula that can perfectly predict the motion of three gravitationally interacting bodies for all possible starting positions!</p>
+                    
+                    <h3>Why is it Called a "Problem"?</h3>
+                    <p>Let's put this in perspective:</p>
+                    <ul>
+                        <li><strong>One body in space:</strong> Easy! It just moves in a straight line (if nothing is pushing or pulling on it).</li>
+                        <li><strong>Two bodies in space:</strong> Mathematicians figured this out centuries ago. They orbit each other in predictable ellipses (oval shapes).</li>
+                        <li><strong>Three bodies in space:</strong> Suddenly, everything becomes incredibly complex! The motion can become chaotic and unpredictable.</li>
+                    </ul>
+                    <p>This jump from "solvable" to "unsolvable" is why it's called a <strong>problem</strong>. It's not that we can't simulate three bodies (we absolutely can, and that's what this project does!), but we can't write down a neat mathematical formula that works for every possible situation.</p>
+                    
+                    <div class="info-box">
+                        <p><strong>Real-World Importance:</strong> This isn't just a mathematical curiosity. The three-body problem matters for space missions, understanding multi-star systems, satellite orbits, and taught us that many systems in nature are fundamentally unpredictable.</p>
+                    </div>
+                </div>
+
+                <div class="docs-section">
+                    <h2>The Mathematics of Gravity</h2>
+                    <h3>Newton's Law of Universal Gravitation</h3>
+                    <p>In the 1600s, Isaac Newton figured out the exact mathematical rule for how gravity works. The force of gravity between two objects depends on three things:</p>
+                    <ol>
+                        <li>How massive the first object is</li>
+                        <li>How massive the second object is</li>
+                        <li>How far apart they are</li>
+                    </ol>
+                    <p>The formula looks like this:</p>
+                    <div class="math-block">
+                        $$F = G \times \frac{m_1 \times m_2}{r^2}$$
+                    </div>
+                    <p><strong>Breaking it down:</strong></p>
+                    <ul>
+                        <li><strong>F</strong> = The force of gravity (how strongly the objects pull on each other)</li>
+                        <li><strong>G</strong> = The gravitational constant (a special number that never changes: 6.674 × 10<sup>-11</sup>)</li>
+                        <li><strong>m₁</strong> = The mass of the first object (how much "stuff" it contains)</li>
+                        <li><strong>m₂</strong> = The mass of the second object</li>
+                        <li><strong>r</strong> = The distance between the centers of the objects</li>
+                        <li><strong>r²</strong> = That distance multiplied by itself (squared)</li>
+                    </ul>
+                    
+                    <h3>What Does This Formula Tell Us?</h3>
+                    <ul>
+                        <li><strong>Heavier objects create stronger gravity:</strong> If you double the mass, you double the force. This is why Earth's gravity is so strong - Earth is incredibly massive.</li>
+                        <li><strong>Closer objects feel stronger gravity:</strong> This is the famous "inverse square law." If you move twice as far away, the gravity becomes 4 times weaker (2² = 4). Distance matters a lot!</li>
+                        <li><strong>Gravity never turns off:</strong> No matter how far apart objects are, there's always some tiny gravitational pull between them.</li>
+                    </ul>
+                </div>
+
+                <div class="docs-section">
+                    <h2>From Force to Motion</h2>
+                    <p>Knowing the force is only half the battle. We need to understand how forces cause objects to move. This is where Newton's famous <strong>Second Law</strong> comes in:</p>
+                    <div class="math-block">
+                        $$F = m \times a$$
+                    </div>
+                    <p><strong>Force equals mass times acceleration</strong></p>
+                    <p>Think of it this way: If you push a shopping cart (low mass), it accelerates quickly. If you push a car (high mass) with the same force, it barely moves. That's because acceleration = force ÷ mass.</p>
+                    
+                    <h3>Equations of Motion</h3>
+                    <p>When we combine Newton's law of gravity with his law of motion, we can figure out how objects move. For three bodies, each body feels forces from the other two:</p>
+                    <div class="math-block">
+                        $$\frac{d^2\vec{r}_i}{dt^2} = G \sum_{j \neq i} \frac{m_j (\vec{r}_j - \vec{r}_i)}{|\vec{r}_j - \vec{r}_i|^3}$$
+                    </div>
+                    <p><strong>Decoding this:</strong></p>
+                    <ul>
+                        <li><strong>r₁, r₂, r₃</strong> = The positions of the three bodies</li>
+                        <li><strong>d²rᵢ/dt²</strong> = The acceleration of body i (how its velocity is changing)</li>
+                        <li><strong>|r<sub>j</sub> - rᵢ|</strong> = The distance between bodies</li>
+                        <li>The right side = The gravitational acceleration caused by the other bodies</li>
+                    </ul>
+                </div>
+
+                <div class="docs-section">
+                    <h2>How Computers Simulate Gravity</h2>
+                    <p>Here's the challenge: those equations above don't have a neat solution we can write down. So how does a computer simulate the motion?</p>
+                    
+                    <h3>The Basic Idea: Tiny Time Steps</h3>
+                    <p>Think of it like creating a flip-book animation:</p>
+                    <ol>
+                        <li><strong>Start:</strong> We know where the three bodies are and how fast they're moving</li>
+                        <li><strong>Calculate:</strong> Use the equations to figure out how their velocities are changing</li>
+                        <li><strong>Step forward:</strong> Move time forward by a tiny amount (like 0.001 seconds)</li>
+                        <li><strong>Update positions:</strong> Based on the velocities, update where the bodies are</li>
+                        <li><strong>Update velocities:</strong> Based on the accelerations, update how fast they're moving</li>
+                        <li><strong>Repeat:</strong> Do it again, thousands of times</li>
+                    </ol>
+                    <p>By taking these tiny steps over and over, we build up the complete motion of the system. It's like piecing together a movie frame by frame.</p>
+                    
+                    <h3>The Runge-Kutta 4 (RK4) Method</h3>
+                    <p>The <strong>Runge-Kutta 4</strong> method is one of the best ways to numerically solve equations like ours. Instead of just looking at the current moment, RK4 is smarter. It's like a hiker who:</p>
+                    <ol>
+                        <li>Looks at the terrain right where they are</li>
+                        <li>Takes a tentative half-step and looks around again</li>
+                        <li>Takes another tentative half-step in a different direction</li>
+                        <li>Takes a full tentative step and looks one more time</li>
+                        <li>Combines all four observations to decide the best full step</li>
+                    </ol>
+                    <p>By "looking ahead" multiple times within each time step, RK4 can better follow curved paths and maintain accuracy.</p>
+                    <div class="math-block">
+                        $$\begin{aligned}
+                        k_1 &= f(t_n, y_n) \\
+                        k_2 &= f(t_n + \frac{\Delta t}{2}, y_n + \frac{\Delta t \cdot k_1}{2}) \\
+                        k_3 &= f(t_n + \frac{\Delta t}{2}, y_n + \frac{\Delta t \cdot k_2}{2}) \\
+                        k_4 &= f(t_n + \Delta t, y_n + \Delta t \cdot k_3) \\
+                        y_{n+1} &= y_n + \frac{\Delta t}{6}(k_1 + 2k_2 + 2k_3 + k_4)
+                        \end{aligned}$$
+                    </div>
+                    <p>Notice that the middle estimates (k₂ and k₃) count twice as much. This weighting is carefully chosen to give excellent accuracy - keeping energy nearly constant and allowing us to trust our results.</p>
+                </div>
+
+                <div class="docs-section">
+                    <h2>Conservation Laws: Nature's Accounting</h2>
+                    <p>In physics, certain quantities are <strong>conserved</strong> - they never change over time in an isolated system. These are like nature's accounting rules.</p>
+                    
+                    <h3>1. Total Energy</h3>
+                    <p><strong>Energy</strong> is the capacity to do work. In our gravitational system, energy comes in two forms:</p>
+                    <p><strong>Kinetic Energy (KE)</strong> - Energy of motion: A body that's moving has kinetic energy. The faster it moves, the more kinetic energy it has. Think of a bowling ball rolling down a lane - its kinetic energy is what knocks down the pins.</p>
+                    <p><strong>Potential Energy (PE)</strong> - Stored energy due to position: When two bodies are far apart, they have high potential energy. When they're close together, they have low potential energy. Think of it like a stretched rubber band - it has stored energy.</p>
+                    <div class="math-block">
+                        $$E_{total} = \frac{1}{2} \sum_{i} m_i |\vec{v}_i|^2 - G \sum_{i} \sum_{j>i} \frac{m_i m_j}{|\vec{r}_j - \vec{r}_i|}$$
+                    </div>
+                    <p><strong>Conservation:</strong> Imagine two bodies orbiting each other. When they swing closer together, PE decreases but KE increases by exactly the same amount - they speed up! When they swing farther apart, they slow down. The total always stays the same. This is one of nature's fundamental laws: energy can change forms, but the total amount never changes.</p>
+                    
+                    <h3>2. Linear Momentum</h3>
+                    <p><strong>Momentum</strong> is mass times velocity. It measures "how hard it is to stop something." A heavy truck moving slowly has the same momentum as a light car moving fast.</p>
+                    <div class="math-block">
+                        $$\vec{P} = \sum_{i} m_i \vec{v}_i$$
+                    </div>
+                    <p><strong>Conservation:</strong> If Body 1 starts moving to the right, the other bodies must collectively start moving to the left to keep the total momentum constant. It's like when you push off from a dock in a canoe - you move forward, and the dock (and Earth) very slightly move backward.</p>
+                    
+                    <h3>3. Angular Momentum</h3>
+                    <p><strong>Angular momentum</strong> measures rotational motion. Just as momentum is about moving in a straight line, angular momentum is about spinning or orbiting.</p>
+                    <div class="math-block">
+                        $$\vec{L} = \sum_{i} m_i (\vec{r}_i \times \vec{v}_i)$$
+                    </div>
+                    <p><strong>Conservation:</strong> This explains why figure skaters spin faster when they pull their arms in, and why planets move faster when they're closer to the Sun. If the three bodies are spinning in one direction overall, they'll keep spinning that way forever.</p>
+                    
+                    <div class="info-box">
+                        <p><strong>Why This Matters:</strong> These conservation laws are like a "sanity check" for our simulation. If energy drifts significantly, it's a warning sign that we need smaller time steps or better numerical methods. With RK4 and a time step of 0.001, we typically achieve energy drift well below 0.01%.</p>
+                    </div>
+                </div>
+
+                <div class="docs-section">
+                    <h2>Famous Three-Body Configurations</h2>
+                    <p>While most three-body initial conditions lead to chaotic motion, some very special configurations create beautiful, periodic orbits.</p>
+                    
+                    <h3>The Figure-8 Orbit</h3>
+                    <p>Discovered by mathematician Cris Moore in 1993 and rigorously proven by Alain Chenciner and Richard Montgomery in 2000, this is one of the most beautiful results in celestial mechanics.</p>
+                    <p><strong>What is it?</strong> Three equal-mass bodies chase each other around a figure-8 path. Imagine three cars following each other on a race track shaped like the number 8. Each car is always 120° (one-third of the way) behind the next car.</p>
+                    <p><strong>Why it's amazing:</strong> For 300 years, people thought stable three-body orbits were extremely rare. The figure-8 showed that beautiful, periodic solutions exist if you look for them.</p>
+                    
+                    <h3>The Lagrange Triangle</h3>
+                    <p>Discovered by Joseph-Louis Lagrange in 1772, this configuration represents one of the most stable solutions to the three-body problem.</p>
+                    <p><strong>What is it?</strong> Three bodies of equal mass are placed at the vertices of an equilateral triangle. If given the right initial velocities (perpendicular to the sides of the triangle), they will orbit around their common center of mass while maintaining the triangular shape forever.</p>
+                    <p><strong>Why it's stable:</strong> This configuration sits at special points called Lagrange points (L4 and L5). At these points, the gravitational forces from all three bodies perfectly balance with the centrifugal force from rotation. It's like three dancers holding hands and spinning together in perfect harmony.</p>
+                    <p><strong>Real-world examples:</strong> In our solar system, Jupiter's Trojan asteroids cluster around the L4 and L5 points of the Sun-Jupiter system. These asteroids have been stable in these positions for billions of years!</p>
+                    <p><strong>Mathematical elegance:</strong> Unlike most three-body systems, the Lagrange triangle is <strong>linearly stable</strong> for equal masses, meaning small perturbations don't cause the system to fall apart. This makes it one of the rare predictable solutions to the three-body problem.</p>
+                    
+                    <h3>Chaotic Systems: The Typical Case</h3>
+                    <p>Here's the truth: the beautiful periodic orbits are extremely rare. For most initial conditions, three-body systems are chaotic, meaning tiny changes in starting positions lead to completely different outcomes (the "butterfly effect"). This makes long-term prediction impossible, even though we can simulate accurately in the short term.</p>
+                </div>
+            </div>
+
+            <!-- Lorenz Attractor Content -->
+            <div class="sim-content" id="lorenz">
+                <div class="docs-section">
+                    <h2>The Birth of Chaos Theory</h2>
+                    <p>In 1963, meteorologist Edward Lorenz was trying to predict the weather using computers. He was running simulations of air circulation in the atmosphere when he made a discovery that would change science forever.</p>
+                    <p>One day, he wanted to rerun a simulation from the middle. He typed in the numbers from a printout, started the computer, and went for coffee. When he came back, he was shocked. The new simulation showed completely different weather patterns than the original run!</p>
+                    <p>What went wrong? Absolutely nothing. Lorenz had simply rounded the numbers slightly (from 0.506127 to 0.506) when retyping them. This tiny difference - smaller than a thousandth - caused the weather to evolve in a completely different way after just a short time.</p>
+                    <p>This was the discovery of <strong>sensitive dependence on initial conditions</strong>, popularly known as the <strong>butterfly effect</strong>: the idea that a butterfly flapping its wings in Brazil could theoretically cause a tornado in Texas weeks later.</p>
+                    
+                    <div class="info-box">
+                        <p><strong>The Butterfly Effect:</strong> Small changes in starting conditions lead to wildly different outcomes. This is why weather forecasts become unreliable after about a week - tiny measurement errors grow exponentially over time.</p>
+                    </div>
+                </div>
+
+                <div class="docs-section">
+                    <h2>What is the Lorenz Attractor?</h2>
+                    <p>The <strong>Lorenz attractor</strong> is the beautiful butterfly-shaped pattern that emerges when we visualize Lorenz's equations. It shows how a simple system (just three equations!) can produce infinitely complex behavior.</p>
+                    <p>Think of it like this: imagine a ball rolling around in a bowl with two dips. The ball will roll back and forth, never settling in one place, tracing out a figure-8 pattern over and over. But unlike a simple figure-8, the Lorenz attractor never repeats exactly - it loops around one side, then the other, in an unpredictable but strangely organized way.</p>
+                    
+                    <h3>Why "Attractor"?</h3>
+                    <p>An attractor is a pattern that a system naturally evolves toward. No matter where you start (within reason), the system will eventually settle into tracing out this butterfly pattern. It's like streams of water that all flow into the same river - different starting points lead to the same final behavior.</p>
+                    <p>But here's what makes it "strange": the attractor is <strong>fractal</strong>, meaning it has infinite complexity. If you zoom in on any part of it, you see more and more intricate structure forever. It's like coastlines - the closer you look, the more detail you find.</p>
+                </div>
+
+                <div class="docs-section">
+                    <h2>The Mathematics: Three Simple Equations</h2>
+                    <p>The Lorenz system consists of just three equations that describe how three variables (x, y, and z) change over time:</p>
+                    <div class="math-block">
+                        $$\begin{aligned}
+                        \frac{dx}{dt} &= \sigma(y - x) \\
+                        \frac{dy}{dt} &= x(\rho - z) - y \\
+                        \frac{dz}{dt} &= xy - \beta z
+                        \end{aligned}$$
+                    </div>
+                    
+                    <h3>What Do These Variables Represent?</h3>
+                    <p>Originally, Lorenz used these to model atmospheric convection (hot air rising, cool air falling):</p>
+                    <ul>
+                        <li><strong>x</strong>: The rate of convective flow (how fast air is circulating)</li>
+                        <li><strong>y</strong>: The horizontal temperature variation (temperature difference left-to-right)</li>
+                        <li><strong>z</strong>: The vertical temperature variation (temperature difference top-to-bottom)</li>
+                    </ul>
+                    
+                    <h3>Breaking Down the Equations</h3>
+                    <p><strong>First equation: dx/dt = σ(y - x)</strong></p>
+                    <p>This says the rate of convection changes based on temperature differences. If y > x, convection speeds up. The parameter σ (sigma) controls how strongly temperature differences affect flow. Think of it like friction - higher σ means temperature differences have a bigger effect.</p>
+                    
+                    <p><strong>Second equation: dy/dt = x(ρ - z) - y</strong></p>
+                    <p>This is trickier. The horizontal temperature distribution changes based on the interaction between convection (x) and the vertical temperature (z). The parameter ρ (rho) represents the temperature difference between the top and bottom of the atmosphere. The -y term causes the temperature distribution to decay over time.</p>
+                    
+                    <p><strong>Third equation: dz/dt = xy - βz</strong></p>
+                    <p>The vertical temperature changes through the **nonlinear** term xy (convection times horizontal temperature) and decays proportionally to β (beta). This xy term is crucial - it creates the coupling that makes the system chaotic!</p>
+                    
+                    <h3>The Magic Parameters</h3>
+                    <p>The classic chaotic behavior emerges when:</p>
+                    <ul>
+                        <li><strong>σ = 10</strong>: Called the Prandtl number, relates air viscosity to heat diffusion</li>
+                        <li><strong>ρ = 28</strong>: Called the Rayleigh number, measures how strong the heating is</li>
+                        <li><strong>β = 8/3</strong>: A geometric factor related to the size of the region</li>
+                    </ul>
+                    <p>With these values, you get the classic butterfly pattern. Change them, and you get different behaviors - maybe fixed points, periodic oscillations, or different types of chaos!</p>
+                </div>
+
+                <div class="docs-section">
+                    <h2>What Makes It Chaotic?</h2>
+                    <h3>Deterministic Yet Unpredictable</h3>
+                    <p>Here's the fascinating paradox: The Lorenz system is <strong>deterministic</strong> - meaning if you know the exact starting state and the equations, you can calculate the future perfectly. There's no randomness, no dice rolls, no uncertainty in the rules.</p>
+                    <p>Yet it's <strong>unpredictable</strong> in practice because:</p>
+                    <ol>
+                       <li>We can never know the starting state with infinite precision</li>
+                        <li>Tiny errors grow exponentially fast</li>
+                        <li>After a short time, our predictions become worthless</li>
+                    </ol>
+                    <p>This is fundamentally different from quantum mechanics (which has genuine randomness) or a coin flip (which is just unknown). It's a third category: deterministic chaos.</p>
+                    
+                    <h3>The Butterfly Effect in Action</h3>
+                    <p>Let's say two systems start at x=1.000000 and x=1.000001 (a difference of one millionth). Initially, they evolve almost identically. But after some time:</p>
+                    <ul>
+                        <li><strong>After 10 steps:</strong> Still very similar, barely different</li>
+                        <li><strong>After 20 steps:</strong> Noticeably different positions</li>
+                        <li><strong>After 30 steps:</strong> Completely unrelated - one might be looping left while the other loops right</li>
+                    </ul>
+                    <p>This exponential divergence is quantified by the ** Lyapunov exponent** (about 0.9 for Lorenz), which essentially says: "errors double roughly every time unit."</p>
+                    
+                    <div class="info-box">
+                        <p><strong>Why Weather Forecasts Fail:</strong> This is why weather forecasts become unreliable after about a week. We can't measure the atmosphere precisely enough, and tiny errors grow until predictions are no better than guessing.</p>
+                    </div>
+                </div>
+
+                <div class="docs-section">
+                    <h2>The Strange Beauty</h2>
+                    <h3>Never Repeating, Always Organized</h3>
+                    <p>Here's what makes the Lorenz attractor so mesmerizing: The system never repeats exactly (it's aperiodic), yet it stays organized within this butterfly shape. It loops around the left wing, then switches to the right wing, seemingly at random - but there's an underlying structure.</p>
+                    <p>If you watch it long enough, you'll notice:</p>
+                    <ul>
+                        <li>It loops around one wing several times</li>
+                        <li>Suddenly flips to the other wing</li>
+                        <li>Loops there for a while</li>
+                        <li>Flips back unpredictably</li>
+                    </ul>
+                    <p>You cannot predict which loop will be the last before it flips - but you know it will stay within the butterfly shape.</p>
+                    
+                    <h3>Fractal Dimension</h3>
+                    <p>The attractor has a fractal dimension of about 2.06. What does this mean?</p>
+                    <p>Normally, dimensions are whole numbers: a line is 1D, a plane is 2D, a cube is 3D. But fractals can have "in-between" dimensions. The Lorenz attractor is more than a surface (2D) but less than a solid (3D) - it's somewhere in between with intricate structure at all scales.</p>
+                    <p>This fractal nature means infinite complexity. No matter how much you zoom in, you keep finding more structure - it never smooths out into something simple.</p>
+                </div>
+
+                <div class="docs-section">
+                    <h2>Real-World Impact</h2>
+                    <p>The Lorenz attractor wasn't just a mathematical curiosity. It fundamentally changed how we understand the world:</p>
+                    <ul>
+                        <li><strong>Weather and Climate:</strong> Showed fundamental limits on long-term weather prediction</li>
+                        <li><strong>Economics:</strong> Markets are chaotic systems - small changes can have huge effects</li>
+                        <li><strong>Biology:</strong> Heart rhythms, brain activity, population dynamics all show chaotic behavior</li>
+                        <li><strong>Engineering:</strong> Understanding chaos helps design more stable systems</li>
+                        <li><strong>Philosophy:</strong> Challenged determinism - knowing the rules doesn't mean you can predict the future</li>
+                    </ul>
+                    <p>Edward Lorenz essentially founded chaos theory with this discovery, showing that simple rules can produce fantastically complex behavior. It's a reminder that the universe can be both lawful and unpredictable at the same time.</p>
+                </div>
+            </div>
+
+            <!-- Rössler Attractor Content -->
+            <div class="sim-content" id="rossler">
+                <div class="docs-section">
+                    <h2>The Simplest Chaos</h2>
+                    <p>In 1976, German biochemist Otto Rössler wanted to understand chaos in the simplest possible way. While studying chemical reactions, he asked himself: "What's the minimum complexity needed to create chaotic behavior?"</p>
+                    <p>The Lorenz attractor had already shown that three coupled equations could produce chaos, but its equations were relatively complex with multiple nonlinear terms. Rössler wondered: could chaos emerge from something even simpler?</p>
+                    <p>His answer was yes. The <strong>Rössler attractor</strong> is one of the simplest chaotic systems possible - it has just <strong>one nonlinear term</strong> in its three equations, yet produces beautifully complex behavior.</p>
+                    
+                    <div class="info-box">
+                        <p><strong>Why This Matters:</strong> The Rössler attractor proved that chaos doesn't require complexity in the equations - it can emerge from incredibly simple mathematical rules. This has profound implications for understanding chaotic behavior in nature.</p>
+                    </div>
+                </div>
+
+                <div class="docs-section">
+                    <h2>What Does It Look Like?</h2>
+                    <p>Imagine watching from above as a point traces out a pattern. The Rössler attractor looks like a spiral staircase viewed from above - the path spirals outward in loops, and every once in a while, it "jumps" to a different level before continuing its spiral dance.</p>
+                    <p>Unlike the Lorenz attractor's butterfly shape with two wings, the Rössler has a single spiral that gets periodically disrupted, creating a characteristic "bread roll" or "cinnamon bun" appearance when viewed in 3D.</p>
+                    
+                    <h3>The Spiral and the Fold</h3>
+                    <p>The motion has two distinct behaviors:</p>
+                    <ul>
+                        <li><strong>Spiraling:</strong> Most of the time, the trajectory spirals outward in roughly circular loops</li>
+                        <li><strong>Folding:</strong> Occasionally, when conditions are right, the trajectory gets "lifted up" and reset, creating a fold in the structure</li>
+                    </ul>
+                    <p>This spiral-and-fold mechanism is what creates the chaos - the system never settles into a regular pattern, but spirals in an ever-varying way.</p>
+                </div>
+
+                <div class="docs-section">
+                    <h2>The Mathematics: Three Simple Equations</h2>
+                    <p>The Rössler system consists of three equations describing how x, y, and z change over time:</p>
+                    <div class="math-block">
+                        $$\begin{aligned}
+                        \frac{dx}{dt} &= -y - z \\
+                        \frac{dy}{dt} &= x + ay \\
+                        \frac{dz}{dt} &= b + z(x - c)
+                        \end{aligned}$$
+                    </div>
+                    
+                    <h3>Breaking Down Each Equation</h3>
+                    
+                    <p><strong>First Equation: dx/dt = -y - z</strong></p>
+                    <p>This equation controls how x changes. It says: "x decreases based on the values of y and z." The negative signs mean that when y or z are positive, x decreases, and vice versa. This creates a <strong>rotational motion</strong> - if you think of x and y as coordinates in a plane, this starts creating circular motion.</p>
+                    <p>Think of it like a merry-go-round: if you're at a certain position (x), the force pulling you around depends on your current angle (related to y and z).</p>
+                    
+                    <p><strong>Second Equation: dy/dt = x + ay</strong></p>
+                    <p>This equation says y changes based on the current value of x, plus a small feedback from y itself. The parameter 'a' controls this self-feedback:</p>
+                    <ul>
+                        <li>If a is small (like 0.2), the feedback is weak - y changes mostly due to x</li>
+                        <li>The "+x" term continues the rotational motion started by the first equation</li>
+                        <li>The "+ay" term either amplifies or dampens this rotation slightly</li>
+                    </ul>
+                    <p>Together, the first two equations create a <strong>spiral in the xy-plane</strong> - like water circling a drain.</p>
+                    
+                    <p><strong>Third Equation: dz/dt = b + z(x - c)</strong></p>
+                    <p>This is where the magic happens! This equation controls the z-coordinate (height) and contains the system's <strong>only nonlinear term</strong>: z(x - c).</p>
+                    <p>Let's break it down:</p>
+                    <ul>
+                        <li><strong>b</strong>: A constant upward drift. Without anything else, z would just slowly increase forever</li>
+                        <li><strong>z(x - c)</strong>: This is the nonlinear term that creates chaos. When x is greater than c, this term is positive (z grows faster). When x is less than c, this term is negative (z shrinks)</li>
+                    </ul>
+                    <p>What this means in practice: As the system spirals in the xy-plane, x goes positive and negative. When x crosses the threshold value c, the z-direction behavior suddenly changes - this creates the "fold" that disrupts the spiral and prevents it from settling into a regular pattern.</p>
+                    
+                    <h3>The Standard Parameters</h3>
+                    <p>The classic chaotic Rössler attractor uses:</p>
+                    <ul>
+                        <li><strong>a = 0.2</strong>: Small feedback in the y-direction, allowing gentle spiraling</li>
+                        <li><strong>b = 0.2</strong>: Gentle upward drift in z</li>
+                        <li><strong>c = 5.7</strong>: The threshold that determines when the folding behavior kicks in</li>
+                    </ul>
+                    <p>Change these values and you get different behaviors! With different parameters, you might get fixed points (system settles to one spot), periodic orbits (regular repeating patterns), or different types of chaos.</p>
+                </div>
+
+                <div class="docs-section">
+                    <h2>Why Is It Chaotic?</h2>
+                    <h3>The Mechanism of Chaos</h3>
+                    <p>The Rössler attractor is chaotic because of the interplay between spiraling and folding:</p>
+                    <ol>
+                        <li><strong>Spiraling expands differences:</strong> As trajectories spiral outward, points that started close together gradually separate</li>
+                        <li><strong>Folding brings them back:</strong> But before they can spiral away forever, the folding mechanism resets them, bringing them back to start another spiral</li>
+                        <li><strong>Never quite the same:</strong> Each time through, tiny differences mean the trajectory doesn't land exactly where it started - leading to infinite variation</li>
+                    </ol>
+                    <p>This expand-and-fold mechanism is similar to kneading bread dough: you stretch it out (separation) then fold it back (compression), and after many iterations, you have a complex, layered structure.</p>
+                    
+                    <h3>Simpler Than Lorenz, But Still Chaotic</h3>
+                    <p>The Rössler attractor has some interesting properties compared to Lorenz:</p>
+                    <ul>
+                        <li><strong>Only one nonlinear term</strong> (z(x-c)) versus Lorenz's many nonlinear terms</li>
+                        <li><strong>Easier to analyze mathematically</strong> because of its simplicity</li>
+                        <li><strong>Clearer geometric structure</strong> - the spiral-and-fold pattern is more obvious</li>
+                        <li><strong>Still fully chaotic</strong> - sensitive to initial conditions, aperiodic, bounded</li>
+                    </ul>
+                    
+                    <div class="info-box">
+                        <p><strong>Pedagogical Value:</strong> Because it's simpler than Lorenz, the Rössler attractor is often used in teaching to illustrate the basic mechanisms of chaos without getting lost in mathematical complexity.</p>
+                    </div>
+                </div>
+
+                <div class="docs-section">
+                    <h2>The Route to Chaos</h2>
+                    <p>One fascinating aspect of the Rössler attractor is how it transitions from orderly to chaotic behavior as you change parameters.</p>
+                    <p>If you gradually increase parameter 'c' (the threshold value), you see a sequence of behaviors:</p>
+                    <ol>
+                        <li><strong>Fixed point (c very small):</strong> The system spirals inward and stops at one location</li>
+                        <li><strong>Periodic orbit:</strong> The system settles into a repeating loop - same pattern over and over</li>
+                        <li><strong>Period doubling:</strong> The loop doubles - it now takes two loops to repeat</li>
+                        <li><strong>More period doubling:</strong> Four loops, then eight, then sixteen...</li>
+                        <li><strong>Chaos (c = 5.7):</strong> After enough doublings, regularity breaks down completely</li>
+                    </ol>
+                    <p>This "period-doubling route to chaos" is one of the universal ways that ordered systems become chaotic. It appears in everything from dripping faucets to electronic circuits to population dynamics!</p>
+                </div>
+
+                <div class="docs-section">
+                    <h2>Real-World Applications</h2>
+                    <p>Despite its abstract appearance, the Rössler attractor helps us understand:</p>
+                    <ul>
+                        <li><strong>Chemical Reactions:</strong> Rössler originally developed this while studying chemical oscillations - reactions that cycle in complex ways</li>
+                        <li><strong>Heart Rhythms:</strong> Certain cardiac arrhythmias show Rössler-like dynamics</li>
+                        <li><strong>Brain Dynamics:</strong> Neural circuits can exhibit similar spiral-and-fold behavior</li>
+                        <li><strong>Electronic Circuits:</strong> Simple circuits can be designed to follow Rössler dynamics</li>
+                        <li><strong>Theoretical Physics:</strong> Studying simple chaotic systems helps understand more complex ones</li>
+                    </ul>
+                    
+                    <h3>Why Study Simple Chaos?</h3>
+                    <p>The Rössler attractor proves an important point: you don't need complicated equations to get complicated behavior. Sometimes the simplest systems reveal the deepest truths about how nature works. By understanding the Rössler attractor, we gain insights into more complex chaotic systems throughout nature.</p>
+                </div>
+            </div>
+
+            <!-- Double Pendulum Content -->
+            <div class="sim-content" id="double-pendulum">
+                <div class="docs-section">
+                    <h2>Chaos in Your Living Room</h2>
+                    <p>Imagine a simple pendulum - perhaps the pendulum of a grandfather clock, swinging back and forth in a steady, predictable rhythm. Now imagine attaching another pendulum to the end of the first one. This is a <strong>double pendulum</strong>, and despite looking so simple, it's one of the most accessible demonstrations of chaos theory you can build at home.</p>
+                    <p>What makes it fascinating? A single pendulum's motion is completely predictable - you can calculate exactly where it will be at any time in the future. But add just one more pendulum, and suddenly you have a system so chaotic that even knowing its exact starting position won't help you predict its motion for more than a few seconds.</p>
+                    
+                    <div class="info-box">
+                        <p><strong>Simple Construction, Complex Behavior:</strong> The double pendulum beautifully demonstrates that complexity doesn't require complicated parts - just complicated interactions. Two simple pendulums create chaos.</p>
+                    </div>
+                </div>
+
+                <div class="docs-section">
+                    <h2>What Makes It Move?</h2>
+                    <h3>The Physical Setup</h3>
+                    <p>A double pendulum consists of:</p>
+                    <ul>
+                        <li><strong>First pendulum:</strong> A rod of length $l_1$ with mass $m_1$ at its end, hanging from a fixed pivot point</li>
+                        <li><strong>Second pendulum:</strong> A rod of length $l_2$ with mass $m_2$ at its end, hanging from the end of the first pendulum</li>
+                    </ul>
+                    <p>Both pendulums swing under the influence of gravity. The second pendulum is carried along by the first one, but also has its own swinging motion. These two motions interact in complicated ways, creating the chaos we observe.</p>
+                    
+                    <h3>The Two Angles</h3>
+                    <p>We describe the system using two angles:</p>
+                    <ul>
+                        <li><strong>$\theta_1$:</strong> The angle of the first pendulum from vertical (hanging straight down)</li>
+                        <li><strong>$\theta_2$:</strong> The angle of the second pendulum from vertical</li>
+                    </ul>
+                    <p>As the system moves, both angles change constantly. Sometimes they swing together in the same direction, sometimes in opposite directions, and sometimes one is moving fast while the other is barely moving. This unpredictable dance is chaos in action.</p>
+                </div>
+
+                <div class="docs-section">
+                    <h2>The Mathematics: Energy in Motion</h2>
+                    <h3>The Lagrangian Approach</h3>
+                    <p>Instead of tracking forces (which gets very messy for a double pendulum), we use a powerful method called the <strong>Lagrangian formulation</strong>. The Lagrangian is simply kinetic energy minus potential energy:</p>
+                    <div class="math-block">
+                        $$L = T - V$$
+                    </div>
+                    <p>Where T is kinetic energy (energy of motion) and V is potential energy (stored gravitational energy). From this single quantity, we can derive all the equations of motion using elegant mathematical techniques.</p>
+                    
+                    <h3>Why This Gets Chaotic</h3>
+                    <p>The double pendulum becomes chaotic because of <strong>nonlinear coupling</strong> between the two pendulums. Each pendulum's motion affects the other in complex, multiplicative ways. When you have terms like $\sin(\theta_1 - \theta_2)$ appearing in your equations, small changes in angles lead to dramatically different forces, creating the signature butterfly effect.</p>
+                    
+                    <p>Unlike a single pendulum (which just rocks back and forth predictably), the double pendulum can:</p>
+                    <ul>
+                        <li>Flip completely over the top</li>
+                        <li>Swing wildly in seemingly random directions</li>
+                        <li>Briefly settle into a regular pattern, then suddenly go chaotic</li>
+                        <li>Trace out beautiful, unrepeating trajectories</li>
+                    </ul>
+                </div>
+
+                <div class="docs-section">
+                    <h2>Sensitivity to Initial Conditions</h2>
+                    <p>The double pendulum is one of the best demonstrations of the butterfly effect. Release two double pendulums from positions that differ by just a millimeter, and within seconds their motions will be completely different.</p>
+                    <p>This makes long-term prediction impossible. Even if you measure the starting position to incredible precision, tiny unavoidable errors grow exponentially, and soon your prediction is worthless.</p>
+                    
+                    <div class="info-box">
+                        <p><strong>Try It Yourself:</strong> If you build a physical double pendulum, you'll never be able to reproduce the exact same motion twice, no matter how carefully you try. This is chaos in action!</p>
+                    </div>
+                </div>
+
+                <div class="docs-section">
+                    <h2>Real-World Significance</h2>
+                    <p>The double pendulum isn't just a curiosity - it demonstrates principles that appear throughout nature and engineering:</p>
+                    <ul>
+                        <li><strong>Robotics:</strong> Robot arms with multiple joints face similar chaotic dynamics</li>
+                        <li><strong>Biomechanics:</strong> Human limbs are essentially linked pendulums - walking and running involves managing this chaos</li>
+                        <li><strong>Engineering:</strong> Any system with multiple coupled oscillators can show similar chaotic behavior</li>
+                        <li><strong>Fundamental physics:</strong> Shows that determinism doesn't mean predictability</li>
+                    </ul>
+                    <p>The double pendulum proves that chaos isn't rare or exotic - it's hiding in everyday mechanical systems, waiting to emerge when conditions are right.</p>
+                </div>
+            </div>
+
+            <!-- Double-Gyre Flow Content -->
+            <div class="sim-content" id="double-gyre">
+                <div class="docs-section">
+                    <h2>Ocean Circulation in Miniature</h2>
+                    <p>Imagine the North Atlantic Ocean. In the northern part, water rotates clockwise (the Gulf Stream system). In the southern part, water rotates counterclockwise. Between these two rotating systems is a fascinating region where water gets stretched, folded, and mixed in complex ways.</p>
+                    <p>The <strong>double-gyre flow</strong> is a simplified model that captures this essential oceanic structure - two counter-rotating circulation cells in a basin. Despite its simplicity, it reveals profound insights about mixing, transport, and the chaotic nature of ocean currents.</p>
+                    <div class="info-box">
+                        <p><strong>A Canonical Model:</strong> The double-gyre has become one of the most studied models in geophysical fluid dynamics, revealing how tracers like nutrients, pollutants, or heat spread in the ocean.</p>
+                    </div>
+                </div>
+                <div class="docs-section">
+                    <h2>The Physical Setup</h2>
+                    <p>A double-gyre consists of:</p>
+                    <ul>
+                        <li><strong>Rectangular basin:</strong> Representing an idealized ocean basin</li>
+                        <li><strong>Wind forcing:</strong> Westerly winds at high latitudes, easterly winds at low latitudes</li>
+                        <li><strong>Two gyres:</strong> A subtropical gyre (rotating clockwise in Northern Hemisphere) and a subpolar gyre (rotating counterclockwise)</li>
+                        <li><strong>Separating jet:</strong> A strong eastward-flowing current between the gyres</li>
+                    </ul>
+                </div>
+                <div class="docs-section">
+                    <h2>Chaotic Mixing</h2>
+                    <p>When the flow varies in time, the separatrix breaks and fluid gets exchanged between gyres through intricate lobes. This creates chaotic advection where particle paths become sensitive to initial conditions. A particle starting near the boundary gets stretched into a long, thin filament that explores both gyres unpredictably!</p>
+                </div>
+                <div class="docs-section">
+                    <h2>Real Ocean Connections</h2>
+                    <p>The double-gyre model helps us understand Gulf Stream meanders, cross-gyre transport of nutrients and heat, eddy diffusion, climate variability, and marine ecosystem dynamics. It's a perfect example of how simplified models reveal essential features of complex natural systems.</p>
+                </div>
+            </div>
+
+            <!-- Malkus Waterwheel Content -->
+            <div class="sim-content" id="malkus">
+                <div class="docs-section">
+                    <h2>A Mechanical Lorenz Attractor</h2>
+                    <p>In 1972, physicist Willem Malkus proposed a brilliant physical demonstration of chaos: a simple waterwheel that exhibits the same mathematical behavior as the Lorenz attractor. This isn't just a coincidence - Malkus deliberately designed the waterwheel to be a mechanical analog of Lorenz's atmospheric convection equations.</p>
+                    <p>The beauty of the Malkus waterwheel is that you can build it in your workshop and literally see chaos happening. No computers, no abstract mathematics - just water, buckets, and gravity creating unpredictable motion.</p>
+                    
+                    <div class="info-box">
+                        <p><strong>From Abstract to Physical:</strong> The Malkus waterwheel proves that chaos isn't just a mathematical abstraction - it's a real physical phenomenon you can touch and observe. It's one of the most elegant demonstrations that the Lorenz equations describe real-world behavior.</p>
+                    </div>
+                </div>
+
+                <div class="docs-section">
+                    <h2>How Does It Work?</h2>
+                    <h3>The Physical Setup</h3>
+                    <p>Imagine a waterwheel - like an old mill wheel - but arranged horizontally so it can spin freely around a vertical axis. Around the rim of the wheel are evenly spaced buckets, each with a small hole in the bottom.</p>
+                    <p>Now, water drips steadily onto whichever bucket is currently at the top. As that bucket fills with water, it becomes heavier. Gravity pulls it down, causing the wheel to start rotating. But here's the catch: the buckets have holes! Water constantly leaks out.</p>
+                    <p>The interplay between water filling (at the top), leaking (everywhere), and gravity (pulling heavy buckets down) creates an incredibly rich dynamics. Depending on the rates of filling, leaking, and friction, the wheel might:</p>
+                    <ul>
+                        <li><strong>Spin steadily in one direction</strong></li>
+                        <li><strong>Oscillate back and forth</strong></li>
+                        <li><strong>Spin chaotically, randomly reversing direction</strong></li>
+                    </ul>
+                </div>
+
+                <div class="docs-section">
+                    <h2>The Mathematics: Waterwheel Equations</h2>
+                    <p>We can describe the waterwheel with a set of equations that track the wheel's angular velocity and the water mass in each bucket:</p>
+                    <div class="math-block">
+                        $$\begin{aligned}
+                        \frac{d\omega}{dt} &= \sum_{i=1}^{N} m_i r \sin\theta_i - \nu\omega \\
+                        \frac{dm_i}{dt} &= Q\delta_{i,top} - Km_i \\
+                        \frac{d\theta_i}{dt} &= \omega
+                        \end{aligned}$$
+                    </div>
+                    
+                    <h3>Breaking Down the Equations</h3>
+                    
+                    <p><strong>First Equation: dω/dt = Σ(m_i r sinθ_i) - νω</strong></p>
+                    <p>This describes how the wheel's angular velocity (ω) changes:</p>
+                    <ul>
+                        <li><strong>Σ(m_i r sinθ_i)</strong>: The total torque from all buckets. Each bucket at angle θ_i with water mass m_i contributes torque proportional to sinθ_i. Buckets on the "heavy side" speed up rotation</li>
+                        <li><strong>-νω</strong>: Damping/friction term. The faster the wheel spins, the more friction opposes it (ν is the damping coefficient)</li>
+                    </ul>
+                    <p>Think of it like pushing a merry-go-round: heavy buckets create pushing force, but friction slows everything down.</p>
+                    
+                    <p><strong>Second Equation: dm_i/dt = Qδ_i,top - Km_i</strong></p>
+                    <p>This tracks how the water mass in each bucket changes:</p>
+                    <ul>
+                        <li><strong>Qδ_i,top</strong>: Water inflow at rate Q, but only into whichever bucket is at the top (δ_i,top = 1 for top bucket, 0 for others)</li>
+                        <li><strong>-Km_i</strong>: Water leaking out at rate K proportional to how much water is in the bucket</li>
+                    </ul>
+                    <p>More water = faster leak (like water pressure pushing through the hole)</p>
+                    
+                    <p><strong>Third Equation: dθ_i/dt = ω</strong></p>
+                    <p>Each bucket's angle changes at the wheel's angular velocity - they all rotate together!</p>
+                </div>
+
+                <div class="docs-section">
+                    <h2>Connection to Lorenz Attractor</h2>
+                    <h3>Mathematical Equivalence</h3>
+                    <p>Here's the amazing part: if you simplify the waterwheel equations (by assuming many buckets forming a continuous distribution), you get almost exactly the Lorenz equations! The mapping is:</p>
+                    <ul>
+                        <li><strong>x (Lorenz)</strong> ↔ <strong>ω (waterwheel angular velocity)</strong></li>
+                        <li><strong>y (Lorenz)</strong> ↔ <strong>First moment of water distribution</strong></li>
+                        <li><strong>z (Lorenz)</strong> ↔ <strong>Second moment of water distribution</strong></li>
+                    </ul>
+                    
+                    <p>The parameters map as:</p>
+                    <ul>
+                        <li><strong>Q</strong> (inflow rate) relates to <strong>ρ</strong> (Rayleigh number) - driving force</li>
+                        <li><strong>K</strong> (leak rate) affects stability transitions</li>
+                        <li><strong>ν</strong> (damping) relates to <strong>σ</strong> (Prandtl number) - dissipation</li>
+                    </ul>
+                    
+                    <div class="info-box">
+                        <p><strong>Physical Insight:</strong> This connection reveals that Lorenz's atmospheric convection and a simple waterwheel share the same mathematical structure. Chaos emerges from the same mechanisms: driving force (Q or heating), dissipation (ν or viscosity), and nonlinear coupling.</p>
+                    </div>
+                </div>
+
+                <div class="docs-section">
+                    <h2>Three Regimes of Behavior</h2>
+                    
+                    <h3>1. Steady Rotation (Low Damping, High Inflow)</h3>
+                    <p>When water flows in fast and friction is low, buckets on one side fill up quickly before they can leak much. The wheel spins steadily in one direction. This is like a fixed point attractor - simple, predictable motion.</p>
+                    
+                    <h3>2. Periodic Oscillation (Moderate Parameters)</h3>
+                    <p>With certain parameter values, the wheel exhibits regular back-and-forth motion: it spins one way, slows down as water redistributes, reverses direction, and repeats. This is like a limit cycle - periodic, predictable behavior.</p>
+                    
+                    <h3>3. Chaotic Rotation (Critical Parameters)</h3>
+                    <p>In the chaotic regime (similar to Lorenz's parameters), the wheel exhibits unpredictable direction reversals:</p>
+                    <ul>
+                        <li>Spins clockwise for a while (seemingly random duration)</li>
+                        <li>Slows down and reverses to counterclockwise</li>
+                        <li>Spins counterclockwise for another random duration</li>
+                        <li>Reverses again unpredictably</li>
+                    </ul>
+                    <p>You cannot predict when it will reverse next - that's deterministic chaos at work!</p>
+                </div>
+
+                <div class="docs-section">
+                    <h2>Why Is It Chaotic?</h2>
+                    <h3>The Mechanism</h3>
+                    <p>Chaos emerges from the feedback loop between rotation and water distribution:</p>
+                    <ol>
+                        <li><strong>Heavy side pulls down:</strong> Buckets with more water create more torque, accelerating rotation</li>
+                        <li><strong>Rotation redistributes water:</strong> As the wheel spins, different buckets move to the top and receive water</li>
+                        <li><strong>Leaking changes the balance:</strong> Water leaking out shifts where the heavy side is</li>
+                        <li><strong>Feedback creates instability:</strong> Small asymmetries in water distribution get amplified through rotation</li>
+                    </ol>
+                    <p>This circular feedback - where rotation affects distribution, and distribution affects rotation - is exactly what creates chaos. It's a mechanical version of the atmospheric convection feedback that Lorenz discovered!</p>
+                </div>
+
+                <div class="docs-section">
+                    <h2>Build Your Own!</h2>
+                    <p>The Malkus waterwheel is one of the few chaotic systems you can actually build. Many universities and science museums have working demonstrations. If you want to build one:</p>
+                    <ul>
+                        <li>Use a bike wheel or similar circular frame</li>
+                        <li>Attach small cups or buckets evenly spaced around the rim</li>
+                        <li>Drill small holes in the bottom of each bucket</li>
+                        <li>Mount the wheel horizontally on a low-friction bearing</li>
+                        <li>Drip water steadily onto the top bucket</li>
+                    </ul>
+                    <p>Adjust the drip rate and hole sizes to explore different regimes of behavior. It's a beautiful demonstration of chaos theory you can show to anyone!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+        const navLinksLeft = document.querySelector('.nav-left .nav-links');
+        const navLinksRight = document.querySelector('.nav-right .nav-links');
+        
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', () => {
+                navLinksLeft.classList.toggle('active');
+                navLinksRight.classList.toggle('active');
+            });
+        }
+
+        // Tab switching functionality
+        const simTabs = document.querySelectorAll('.sim-tab');
+        const simContents = document.querySelectorAll('.sim-content');
+
+        simTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                simTabs.forEach(t => t.classList.remove('active'));
+                
+                // Remove active class from all content sections
+                simContents.forEach(content => content.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                tab.classList.add('active');
+                
+                // Show corresponding content
+                const simId = tab.getAttribute('data-sim');
+                const targetContent = document.getElementById(simId);
+                if (targetContent) {
+                    targetContent.classList.add('active');
+                }
+                
+                // Re-render MathJax for the newly displayed content
+                if (window.MathJax) {
+                    MathJax.typesetPromise();
+                }
+            });
+        });
+    </script>
+    <!-- Background Music -->
+    <audio id="bg-music" loop>
+        <source src="music/joan of arc. - barnes blvd.flac" type="audio/flac">
+    </audio>
+
+    <!-- Music Player Button -->
+    <button id="music-toggle" aria-label="Toggle background music">
+        <svg class="music-icon-unmuted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v18c-5 0-8.96-4.03-8.96-9S7 3 12 3zm0 0c5 0 9 4.03 9 9s-4 9-9 9" />
+            <path d="M15 9l4 3-4 3" />
+        </svg>
+        <svg class="music-icon-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v18c-5 0-8.96-4.03-8.96-9S7 3 12 3z" />
+            <path d="M17 9l5 5m0-5l-5 5" stroke="currentColor" stroke-width="2" />
+        </svg>
+    </button>
+
+    <script src="music-player.js"></script>
+</body>
+</html>

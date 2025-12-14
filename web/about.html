@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌌</text></svg>">
+    <title>Gravitation³ - About</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="nav.css">
+    <script defer src="../shared/browser-support.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .about-container {
+            min-height: calc(100vh - 70px);
+            margin-top: 70px;
+            padding: 4rem 2rem;
+            background: radial-gradient(ellipse at center, #1a1f3a 0%, #0a0e27 100%);
+        }
+
+        .about-content {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .about-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .about-title {
+            font-size: 3rem;
+            font-weight: 700;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            animation: fadeInUp 1s ease;
+        }
+
+        .about-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            animation: fadeInUp 1s ease 0.2s both;
+        }
+
+        .about-section {
+            background: var(--bg-overlay, rgba(255, 255, 255, 0.05));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+            transition: all 0.3s ease;
+        }
+
+        .about-section:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-blue);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.15);
+        }
+
+        .about-section:nth-child(2) {
+            animation-delay: 0.4s;
+        }
+
+        .about-section:nth-child(3) {
+            animation-delay: 0.6s;
+        }
+
+        .about-section:nth-child(4) {
+            animation-delay: 0.8s;
+        }
+
+        .about-section:nth-child(5) {
+            animation-delay: 1s;
+        }
+
+        .about-section:nth-child(6) {
+            animation-delay: 1.2s;
+        }
+
+        .about-section h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .about-section p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .about-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .about-section li {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .about-section li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--accent-blue);
+            font-weight: bold;
+        }
+
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .tech-item {
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .tech-item:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: var(--accent-blue);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 212, 255, 0.2);
+        }
+
+        .tech-item .icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tech-item .name {
+            font-size: 1rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .about-title {
+                font-size: 2rem;
+            }
+
+            .tech-stack {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Ribbon -->
+    <nav class="nav-ribbon">
+        <div class="nav-left">
+            <a href="index.html" class="nav-logo">
+                <h1>Gravitation<sup>3</sup></h1>
+            </a>
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="explore.html">
+                        <span class="nav-icon">🔭</span>
+                        <span>Explore Sims</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="ai.html">
+                        <span class="nav-icon">🤖</span>
+                        <span>AI & ML</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="about.html">
+                        <span class="nav-icon">ℹ️</span>
+                        <span>About</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="docs.html">
+                        <span class="nav-icon">📚</span>
+                        <span>Documentation and Guides</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="mission.html">
+                        <span class="nav-icon">🎯</span>
+                        <span>Mission</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="support.html">
+                        <span class="nav-icon">💬</span>
+                        <span>Support</span>
+                    </a>
+                </li>
+            </ul>
+            <button class="mobile-menu-toggle">☰</button>
+        </div>
+    </nav>
+
+    <!-- About Content -->
+    <div class="about-container">
+        <div class="about-content">
+            <div class="about-header">
+                <h1 class="about-title">About Gravitation³</h1>
+                <p class="about-subtitle">Bringing chaos theory to life through interactive simulations</p>
+            </div>
+
+            <div class="about-section">
+                <h2>Welcome to Gravitation³</h2>
+                <p>
+                    Gravitation³ is an interactive physics platform that brings chaotic systems to life through 
+                    stunning 3D visualizations. From the famous three-body problem to the mesmerizing Lorenz 
+                    attractor, we make complex physics accessible to everyone—students, researchers, and curious 
+                    minds alike.
+                </p>
+                <p>
+                    <strong>Want to learn more about our goals and vision?</strong> Visit our <a href="mission.html" style="color: var(--accent-blue); text-decoration: underline;">Mission & Vision</a> page 
+                    to discover why we built this platform, its real-world applications, and how we're integrating 
+                    AI to enhance your exploration of chaos theory.
+                </p>
+            </div>
+
+            <div class="about-section">
+                <h2>What We Offer</h2>
+                <ul>
+                    <li>Real-time 3D visualizations of chaotic systems</li>
+                    <li>Accurate physics simulations using RK4 numerical integration</li>
+                    <li>Interactive controls for exploring different configurations</li>
+                    <li>Multi-language implementations (Python, C++, Java, JavaScript)</li>
+                    <li>Educational resources and documentation</li>
+                    <li>Cross-platform compatibility</li>
+                </ul>
+            </div>
+
+            <div class="about-section">
+                <h2>Technology Stack</h2>
+                <p>
+                    Gravitation³ is built using modern web technologies and scientific computing libraries:
+                </p>
+                <div class="tech-stack">
+                    <div class="tech-item">
+                        <div class="icon">📐</div>
+                        <div class="name">JavaScript</div>
+                    </div>
+                    <div class="tech-item">
+                        <div class="icon">🐍</div>
+                        <div class="name">Python</div>
+                    </div>
+                    <div class="tech-item">
+                        <div class="icon">🎨</div>
+                        <div class="name">CSS3</div>
+                    </div>
+                    <div class="tech-item">
+                        <div class="icon">📄</div>
+                        <div class="name">HTML</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="about-section">
+                <h2>Open Source</h2>
+                <p>
+                    Gravitation³ is an open-source project. We believe in sharing knowledge and encouraging 
+                    collaboration. All our code is available on GitHub, and we welcome contributions from the 
+                    community.
+                </p>
+                <p>
+                    Whether you're a student learning about chaos theory, a researcher exploring complex systems, 
+                    or a developer interested in scientific visualization, we invite you to explore, learn, and 
+                    contribute to the project.
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Background Music -->
+    <audio id="bg-music" loop>
+        <source src="music/joan of arc. - barnes blvd.flac" type="audio/flac">
+        <source src="music/joan of arc. - barnes blvd.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Music Player Button -->
+    <button id="music-toggle" aria-label="Toggle background music">
+        <svg class="music-icon-unmuted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v18c-5 0-8.96-4.03-8.96-9S7 3 12 3zm0 0c5 0 9 4.03 9 9s-4 9-9 9" />
+            <path d="M15 9l4 3-4 3" />
+        </svg>
+        <svg class="music-icon-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v18c-5 0-8.96-4.03-8.96-9S7 3 12 3z" />
+            <path d="M17 9l5 5m0-5l-5 5" stroke="currentColor" stroke-width="2" />
+        </svg>
+    </button>
+
+    <script src="music-player.js"></script>
+    <script>
+        // Mobile menu toggle
+        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+        const navLinksLeft = document.querySelector('.nav-left .nav-links');
+        const navLinksRight = document.querySelector('.nav-right .nav-links');
+
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', () => {
+                navLinksLeft.classList.toggle('active');
+                navLinksRight.classList.toggle('active');
+            });
+        }
+    </script>
+</body>
+</html>

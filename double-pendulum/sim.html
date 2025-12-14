@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Double Pendulum - Gravitation³</title>
+    <link rel="stylesheet" href="../web/style.css">
+    <link rel="stylesheet" href="../web/nav.css">
+    <link rel="stylesheet" href="../shared/ai-chatbot.css">
+    <script defer src="../shared/browser-support.js"></script>
+    <style>
+        @font-face {
+            font-family: 'Neue Montreal';
+            src: url('../fonts/NeueMontreal-Regular.otf') format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+        
+        @font-face {
+            font-family: 'Neue Montreal';
+            src: url('../fonts/NeueMontreal-Medium.otf') format('opentype');
+            font-weight: 500;
+            font-style: normal;
+        }
+        
+        @font-face {
+            font-family: 'Neue Montreal';
+            src: url('../fonts/NeueMontreal-Bold.otf') format('opentype');
+            font-weight: 700;
+            font-style: normal;
+        }
+        
+        @font-face {
+            font-family: 'Neue Montreal';
+            src: url('../fonts/NeueMontreal-Light.otf') format('opentype');
+            font-weight: 300;
+            font-style: normal;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: var(--space-gradient);
+            font-family: 'Neue Montreal', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: var(--text-primary);
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: auto;
+            z-index: 1;
+            transition: left 0.3s ease;
+        }
+
+        .ai-chat-panel.open ~ #canvas-container {
+            left: 400px;
+        }
+
+        body.ai-panel-open #canvas-container {
+            left: 400px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Nav and UI on top */
+        .nav-ribbon,
+        .sim-header,
+        .control-panel {
+            position: fixed;
+            z-index: 1000;
+        }
+
+        .sim-header {
+            top: 70px;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--surface-glass, rgba(10, 14, 39, 0.95));
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .sim-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #00d4ff 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 80px;
+        }
+
+        .stat-label {
+            color: #7d8794;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .stat-value {
+            color: #00d4ff;
+            font-weight: 600;
+            font-size: 1.1rem;
+            font-variant-numeric: tabular-nums;
+            min-width: 70px;
+            text-align: right;
+        }
+
+
+        .control-panel {
+            top: 140px;
+            right: 1rem;
+            width: 320px;
+            max-height: calc(100vh - 150px);
+            background: rgba(26, 31, 58, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            border-radius: 12px;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .control-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-section h3 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: #00d4ff;
+            text-transform: uppercase;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        button {
+            padding: 0.75rem 1rem;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: #00d4ff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+        }
+
+        button.active {
+            background: rgba(0, 212, 255, 0.3);
+            border-color: #00d4ff;
+        }
+
+        .slider-group {
+            margin-bottom: 1rem;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color: #b0b7c3;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: var(--bg-overlay, rgba(255, 255, 255, 0.1));
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #00d4ff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .control-panel {
+                width: calc(100% - 2rem);
+                max-height: 40vh;
+            }
+            .header-stats {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Ribbon -->
+    <nav class="nav-ribbon">
+        <div class="nav-left">
+            <a href="../web/index.html" class="nav-logo">
+                <h1>Gravitation<sup>3</sup></h1>
+            </a>
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="../web/explore.html">
+                        <span class="nav-icon">🔭</span>
+                        <span>Explore Sims</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/ai.html">
+                        <span class="nav-icon">🤖</span>
+                        <span>AI & ML</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="../web/about.html">
+                        <span class="nav-icon">ℹ️</span>
+                        <span>About</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/docs.html">
+                        <span class="nav-icon">📚</span>
+                        <span>Documentation and Guides</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/mission.html">
+                        <span class="nav-icon">🎯</span>
+                        <span>Mission</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/support.html">
+                        <span class="nav-icon">💬</span>
+                        <span>Support</span>
+                    </a>
+                </li>
+            </ul>
+            <button class="mobile-menu-toggle">☰</button>
+        </div>
+    </nav>
+
+    <!-- Simulation Header -->
+    <header class="sim-header">
+        <div class="sim-title">Double Pendulum</div>
+        <div class="header-stats">
+            <div class="stat">
+                <div class="stat-label">Time</div>
+                <div class="stat-value" id="time-display">0.00s</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Energy</div>
+                <div class="stat-value" id="energy-display">0.00</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">FPS</div>
+                <div class="stat-value" id="fps-display">60</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Entropy</div>
+                <div class="stat-value" id="entropy-display">0.00</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <div class="control-section">
+            <h3>Simulation Control</h3>
+            <div class="button-group">
+                <button id="play-btn">▶ Start</button>
+                <button id="pause-btn">⏸ Pause</button>
+                <button id="reset-btn">↻ Reset</button>
+                <button id="export-btn">🎬 Start Recording</button>
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h3>Presets</h3>
+            <div class="button-group">
+                <button class="preset-button active" data-preset="default">Default</button>
+                <button class="preset-button" data-preset="chaos">Chaos</button>
+                <button class="preset-button" data-preset="asymmetric">Asymmetric</button>
+                <button class="preset-button" data-preset="spin">Spin</button>
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h3>Simulation Parameters</h3>
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Speed</span>
+                    <span id="speed-value">1.0x</span>
+                </div>
+                <input type="range" id="speed-slider" min="0.1" max="3.0" step="0.1" value="1.0">
+            </div>
+            <div class="slider-group">
+                <div class="slider-label">
+                    <span>Time Step</span>
+                    <span id="dt-value">0.010</span>
+                </div>
+                <input type="range" id="dt-slider" min="0.001" max="0.05" step="0.001" value="0.01">
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h3>Multiple Pendulums</h3>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                <button id="remove-pendulum" style="flex: 1;">− Remove</button>
+                <span id="pendulum-count" style="font-weight: 600; color: #00d4ff; font-size: 1.2rem;">1</span>
+                <button id="add-pendulum" style="flex: 1;">+ Add</button>
+            </div>
+            <div style="font-size: 0.75rem; color: #7d8794; text-align: center;">
+                Max: 10 pendulums
+            </div>
+        </div>
+
+        <div class="control-section">
+            <h3>Display</h3>
+            <label class="checkbox-group">
+                <input type="checkbox" id="show-trails" checked>
+                <span>Show Trails</span>
+            </label>
+            <label class="checkbox-group">
+                <input type="checkbox" id="show-grid" checked>
+                <span>Show Grid</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Footer Info -->
+    <footer class="footer">
+        <p>
+            <strong>Gravitation³</strong> • Double Pendulum Simulator 
+            • Chaotic mechanics demonstrations • 
+            <a href="https://github.com" target="_blank">View on GitHub</a>
+        </p>
+    </footer>
+
+    <!-- Background Music -->
+    <audio id="bg-music" loop preload="auto">
+        <source src="../web/music/joan of arc. - barnes blvd.flac" type="audio/flac">
+    </audio>
+
+    <!-- Music Toggle Button -->
+    <button id="music-toggle" class="muted" title="Toggle Background Music">
+        <svg class="music-icon-unmuted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+        <svg class="music-icon-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+    </button>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0/dist/tf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../shared/export-schema.js"></script>
+    <script src="../shared/server-helper.js"></script>
+    <script src="../shared/ai-chatbot.js"></script>
+    <script src="simulator.js"></script>
+    <script src="visualizer.js"></script>
+    <script src="app.js"></script>
+    <script src="ai-integration.js"></script>
+    <script src="../web/music-player.js"></script>
+    <script>
+        // Configure AI Chatbot for Double Pendulum
+        if (window.AIChat) {
+            window.AIChat.configure({
+                simulationName: 'Double-Pendulum',
+                dataSource: window.simulator || null
+            });
+        }
+    </script>
+</body>
+</html>

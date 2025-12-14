@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravitation³ - Three-Body Simulator</title>
+    <link rel="stylesheet" href="../web/style.css">
+    <link rel="stylesheet" href="../web/nav.css">
+    <link rel="stylesheet" href="../shared/mobile-responsive.css">
+    <link rel="stylesheet" href="../shared/ai-chatbot.css">
+    <script defer src="../shared/browser-support.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        @font-face {
+            font-family: 'Neue Montreal';
+            src: url('../fonts/NeueMontreal-Regular.otf') format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+        
+        @font-face {
+            font-family: 'Neue Montreal';
+            src: url('../fonts/NeueMontreal-Medium.otf') format('opentype');
+            font-weight: 500;
+            font-style: normal;
+        }
+        
+        @font-face {
+            font-family: 'Neue Montreal';
+            src: url('../fonts/NeueMontreal-Bold.otf') format('opentype');
+            font-weight: 700;
+            font-style: normal;
+        }
+        
+        body {
+            font-family: 'Neue Montreal', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--space-gradient);
+            color: var(--text-primary);
+        }
+        
+        /* Heading styles */
+        .sim-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #00d4ff 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 80px;
+        }
+
+        .stat-label {
+            color: #7d8794;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .stat-value {
+            color: #00d4ff;
+            font-weight: 600;
+            font-size: 1.1rem;
+            font-variant-numeric: tabular-nums;
+            min-width: 70px;
+            text-align: right;
+        }
+
+        /* Heading styles */
+        .input-group label strong {
+            color: #00d4ff;
+            font-weight: 700;
+            font-size: 1.1em;
+            margin: 0 3px;
+        }
+
+        .coord-label {
+            color: #8b5cf6;
+            font-weight: 500;
+            font-style: italic;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .coord-inputs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+
+        .coord-inputs input {
+            width: 100%;
+            padding: 0.5rem;
+            background: var(--bg-overlay, rgba(255, 255, 255, 0.05));
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            border-radius: 6px;
+            color: #e2e8f0;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .coord-inputs input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .coord-inputs input::placeholder {
+            color: #64748b;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Ribbon -->
+    <nav class="nav-ribbon">
+        <div class="nav-left">
+            <a href="../web/index.html" class="nav-logo">
+                <h1>Gravitation<sup>3</sup></h1>
+            </a>
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="../web/explore.html">
+                        <span class="nav-icon">🔭</span>
+                        <span>Explore Sims</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/ai.html">
+                        <span class="nav-icon">🤖</span>
+                        <span>AI & ML</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="../web/about.html">
+                        <span class="nav-icon">ℹ️</span>
+                        <span>About</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/docs.html">
+                        <span class="nav-icon">📚</span>
+                        <span>Documentation and Guides</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/mission.html">
+                        <span class="nav-icon">🎯</span>
+                        <span>Mission</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/support.html">
+                        <span class="nav-icon">💬</span>
+                        <span>Support</span>
+                    </a>
+                </li>
+            </ul>
+            <button class="mobile-menu-toggle">☰</button>
+        </div>
+    </nav>
+
+    <!-- Simulation Info Header -->
+    <header class="sim-header">
+        <div class="sim-title">Three-Body Simulation</div>
+        <div class="header-stats">
+            <div class="stat">
+                <div class="stat-label">Time</div>
+                <div class="stat-value" id="time-display">0.00s</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Energy</div>
+                <div class="stat-value" id="energy-display">0.00</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">FPS</div>
+                <div class="stat-value" id="fps-display">60</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Entropy</div>
+                <div class="stat-value" id="entropy-display">0.00</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- 3D Canvas -->
+        <div id="canvas-container" class="canvas-container">
+            <!-- Three.js will inject canvas here -->
+        </div>
+
+        <!-- Control Panel -->
+        <aside class="control-panel">
+            <div class="panel-section">
+                <h2>Presets</h2>
+                <div class="button-group">
+                    <button class="preset-btn active" data-preset="figure8">Figure-8</button>
+                    <button class="preset-btn" data-preset="lagrange">Lagrange</button>
+                    <button class="preset-btn" data-preset="chaotic">Chaotic</button>
+                    <button class="preset-btn" data-preset="custom">Custom</button>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h2>Simulation Control</h2>
+                <div class="control-group">
+                    <button id="play-btn" class="control-btn primary">
+                        <span class="icon">▶</span> Start
+                    </button>
+                    <button id="pause-btn" class="control-btn" disabled>
+                        <span class="icon">⏸</span> Pause
+                    </button>
+                    <button id="reset-btn" class="control-btn">
+                        <span class="icon">↻</span> Reset
+                    </button>
+                </div>
+                <div class="control-group" style="margin-top: 0.75rem;">
+                    <button id="record-btn" class="control-btn">
+                        <span class="icon">🎬</span> Start Recording
+                    </button>
+                    <button id="add-star-btn" class="control-btn" style="background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);">
+                        <span class="icon">⭐</span> Add Star
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h2>Parameters</h2>
+                
+                <div class="param-group">
+                    <label for="body-count-slider">Number of Bodies</label>
+                    <div class="slider-container">
+                        <input type="range" id="body-count-slider" min="1" max="10" step="1" value="3">
+                        <span id="body-count-value" class="slider-value">3</span>
+                    </div>
+                </div>
+
+                <div class="param-group">
+                    <label for="speed-slider">Simulation Speed</label>
+                    <div class="slider-container">
+                        <input type="range" id="speed-slider" min="0.1" max="5" step="0.1" value="1">
+                        <span id="speed-value" class="slider-value">1.0x</span>
+                    </div>
+                </div>
+
+                <div class="param-group">
+                    <label for="timestep-slider">Time Step (dt)</label>
+                    <div class="slider-container">
+                        <input type="range" id="timestep-slider" min="0.0001" max="0.01" step="0.0001" value="0.001">
+                        <span id="timestep-value" class="slider-value">0.001</span>
+                    </div>
+                </div>
+
+                <div class="param-group">
+                    <label>
+                        <input type="checkbox" id="show-trails" checked>
+                        Show Trails
+                    </label>
+                </div>
+
+                <div class="param-group">
+                    <label>
+                        <input type="checkbox" id="show-velocities">
+                        Show Velocity Vectors
+                    </label>
+                </div>
+
+                <div class="param-group">
+                    <label>
+                        <input type="checkbox" id="center-of-mass">
+                        Center on Mass Center
+                    </label>
+                </div>
+
+                <div class="param-group">
+                    <label>
+                        <input type="checkbox" id="retain-trails" checked>
+                        Retain Trails
+                    </label>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h2>Body Properties</h2>
+                <div id="body-configs" class="body-configs">
+                    <!-- Body configurations will be dynamically generated -->
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h2>Data Management</h2>
+                <div class="button-group-vertical">
+                    <button id="export-btn" class="control-btn secondary">
+                        <span class="icon">💾</span> Export JSON
+                    </button>
+                    <button id="import-btn" class="control-btn secondary">
+                        <span class="icon">📁</span> Import JSON
+                    </button>
+                    <input type="file" id="file-input" accept=".json" style="display: none;">
+                    <button id="screenshot-btn" class="control-btn secondary">
+                        <span class="icon">📷</span> Screenshot
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h2>Statistics</h2>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Steps:</span>
+                        <span id="steps-display" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Energy Drift:</span>
+                        <span id="drift-display" class="stat-value">0.000%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Min Distance:</span>
+                        <span id="min-dist-display" class="stat-value">∞</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Footer Info -->
+    <footer class="footer">
+        <p>
+            <strong>Gravitation³</strong> • Multi-language Three-Body Problem Simulator 
+            • Using RK4 Integration • 
+            <a href="https://github.com" target="_blank">View on GitHub</a>
+        </p>
+    </footer>
+
+    <!-- Background Music -->
+    <audio id="bg-music" loop preload="auto">
+        <source src="../web/music/joan of arc. - barnes blvd.flac" type="audio/flac">
+    </audio>
+
+    <!-- Music Toggle Button -->
+    <button id="music-toggle" class="muted" title="Toggle Background Music">
+        <svg class="music-icon-unmuted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+        </svg>
+        <svg class="music-icon-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+    </button>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0/dist/tf.min.js"></script>
+    <script src="../shared/export-schema.js"></script>
+    <script src="../shared/error-handler.js"></script>
+    <script src="../shared/server-helper.js"></script>
+    <script src="../shared/data-sender.js"></script>
+    <link rel="stylesheet" href="../shared/ai-chatbot.css">
+    <script src="../shared/ai-chatbot.js"></script>
+    <script src="../shared/keyboard-shortcuts.js"></script>
+    <script src="simulator.js"></script>
+    <script src="visualizer.js"></script>
+    <script src="app.js"></script>
+    <script src="ai-integration.js"></script>
+    <script src="../web/music-player.js"></script>
+    <script>
+        // Mobile menu toggle
+        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+        const navLinks = document.querySelector('.nav-links');
+
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+        }
+        
+        // Configure AI Chatbot
+        window.addEventListener('load', () => {
+            // Configure AI Chatbot immediately
+            if (window.AIChat) {
+                window.AIChat.configure({
+                    simulationName: 'Three-Body',
+                    dataSource: window.simulator || null
+                });
+                console.log('✓ AI Chatbot configured for Three-Body simulation');
+            }
+            
+            // Update data source after simulator is ready
+            setTimeout(() => {
+                if (window.AIChat && window.simulator) {
+                    window.AIChat.configure({
+                        simulationName: 'Three-Body',
+                        dataSource: window.simulator
+                    });
+                    console.log('✓ AI Chatbot data source updated');
+                }
+                
+                // Initialize data sender
+                if (window.DataSender && window.simulator) {
+                    window.dataSender = new DataSender({
+                        simulationName: 'Three-Body Problem',
+                        enabled: true
+                    });
+                    window.dataSender.start(window.simulator);
+                    console.log('📡 Data sender initialized for Three-Body simulation');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

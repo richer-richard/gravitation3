@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravitation³ - Lorenz Attractor Simulator</title>
+    <link rel="stylesheet" href="../web/style.css">
+    <link rel="stylesheet" href="../web/nav.css">
+    <link rel="stylesheet" href="../shared/mobile-responsive.css">
+    <link rel="stylesheet" href="../shared/ai-chatbot.css">
+    <script defer src="../shared/browser-support.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        @font-face {
+            font-family: 'Neue Montreal';
+            src: url('../fonts/NeueMontreal-Regular.otf') format('opentype');
+            font-weight: 400;
+            font-style: normal;
+        }
+        
+        @font-face {
+            font-family: 'Neue Montreal';
+            src: url('../fonts/NeueMontreal-Medium.otf') format('opentype');
+            font-weight: 500;
+            font-style: normal;
+        }
+        
+        @font-face {
+            font-family: 'Neue Montreal';
+            src: url('../fonts/NeueMontreal-Bold.otf') format('opentype');
+            font-weight: 700;
+            font-style: normal;
+        }
+        
+        body {
+            font-family: 'Neue Montreal', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--space-gradient);
+            color: var(--text-primary);
+        }
+        
+        /* Adjust layout for navigation ribbon */
+        .sim-header {
+            position: fixed;
+            top: 70px;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--surface-glass, rgba(10, 14, 39, 0.95));
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+            z-index: 1000;
+            box-shadow: var(--shadow-md);
+        }
+
+        .sim-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #00d4ff 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 80px;
+        }
+
+        .stat-label {
+            color: #7d8794;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .stat-value {
+            color: #00d4ff;
+            font-weight: 600;
+            font-size: 1.1rem;
+            font-variant-numeric: tabular-nums;
+            min-width: 70px;
+            text-align: right;
+        }
+
+        /* Main layout with left sidebar for AI chat panel */
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content-wrapper {
+            display: flex;
+            flex: 1;
+            margin-top: 70px; /* Account for nav ribbon */
+        }
+
+        .simulation-area {
+            flex: 1;
+            margin-left: 33%; /* Account for AI panel (33% width) */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .container {
+            top: 60px;
+            margin-left: 0;
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .footer {
+            bottom: 0;
+            margin-left: 33%; /* Account for AI panel */
+        }
+
+        /* AI Status Indicator */
+        .ai-status {
+            position: fixed;
+            bottom: 20px;
+            right: 360px;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: var(--surface-glass, rgba(10, 14, 39, 0.95));
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(124, 58, 237, 0.3);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .ai-status.active {
+            border-color: rgba(124, 58, 237, 1);
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.6),
+                        0 0 60px rgba(236, 72, 153, 0.3),
+                        0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: aiPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes aiPulse {
+            0%, 100% {
+                box-shadow: 0 0 30px rgba(124, 58, 237, 0.6),
+                            0 0 60px rgba(236, 72, 153, 0.3),
+                            0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(124, 58, 237, 0.8),
+                            0 0 80px rgba(236, 72, 153, 0.5),
+                            0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        .ai-status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #6b7280;
+            transition: all 0.3s ease;
+        }
+
+        .ai-status.connected .ai-status-dot {
+            background: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
+        }
+
+        .ai-status.active .ai-status-dot {
+            background: #7c3aed;
+            box-shadow: 0 0 15px rgba(124, 58, 237, 1);
+            animation: dotPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes dotPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        .ai-status-text {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .ai-status.connected .ai-status-text {
+            color: #10b981;
+        }
+
+        .ai-status.active .ai-status-text {
+            background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
+        }
+
+        .ai-status-label {
+            color: #64748b;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Canvas glow when AI is active */
+        #canvas-container.ai-active {
+            box-shadow: inset 0 0 60px rgba(124, 58, 237, 0.2),
+                        0 0 40px rgba(124, 58, 237, 0.3);
+            border: 2px solid rgba(124, 58, 237, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Ribbon -->
+    <nav class="nav-ribbon">
+        <div class="nav-left">
+            <a href="../web/index.html" class="nav-logo">
+                <h1>Gravitation<sup>3</sup></h1>
+            </a>
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="../web/explore.html">
+                        <span class="nav-icon">🔭</span>
+                        <span>Explore Sims</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/ai.html">
+                        <span class="nav-icon">🤖</span>
+                        <span>AI & ML</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="../web/about.html">
+                        <span class="nav-icon">ℹ️</span>
+                        <span>About</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/docs.html">
+                        <span class="nav-icon">📚</span>
+                        <span>Documentation and Guides</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/mission.html">
+                        <span class="nav-icon">🎯</span>
+                        <span>Mission</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/support.html">
+                        <span class="nav-icon">💬</span>
+                        <span>Support</span>
+                    </a>
+                </li>
+            </ul>
+            <button class="mobile-menu-toggle">☰</button>
+        </div>
+    </nav>
+
+    <!-- Simulation Info Header -->
+    <header class="sim-header">
+        <div class="sim-title">Lorenz Attractor Simulation</div>
+        <div class="header-stats">
+            <div class="stat">
+                <div class="stat-label">Time</div>
+                <div class="stat-value" id="time-display">0.000s</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Energy</div>
+                <div class="stat-value" id="energy-display">0.000</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">FPS</div>
+                <div class="stat-value" id="fps-display">120</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Entropy</div>
+                <div class="stat-value" id="entropy-display">0.000</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- AI Status Indicator -->
+        <div>
+            <div class="ai-status-label">AI Model</div>
+            <div class="ai-status-text" id="ai-status-text">Not Connected</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- 3D Canvas -->
+        <div id="canvas-container" class="canvas-container">
+            <!-- Three.js will inject canvas here -->
+        </div>
+
+        <!-- Control Panel -->
+        <aside class="control-panel">
+            <div class="panel-section">
+                <h2>Presets</h2>
+                <div class="button-group">
+                    <button class="preset-btn active" data-preset="single">Single</button>
+                    <button class="preset-btn" data-preset="classic">Classic</button>
+                    <button class="preset-btn" data-preset="multicolor">Multicolor</button>
+                    <button class="preset-btn" data-preset="chaos">Chaos</button>
+                    <button class="preset-btn" data-preset="symmetric">Symmetric</button>
+                    <button class="preset-btn" data-preset="professional">Professional</button>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h2>Simulation Control</h2>
+                <div class="control-group">
+                    <button id="play-btn" class="control-btn primary">
+                        <span class="icon">▶</span> Start
+                    </button>
+                    <button id="pause-btn" class="control-btn" disabled>
+                        <span class="icon">⏸</span> Pause
+                    </button>
+                    <button id="reset-btn" class="control-btn">
+                        <span class="icon">↻</span> Reset
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h2>Lorenz Parameters</h2>
+                
+                <div class="param-group">
+                    <label for="sigma-slider">σ (Sigma) - Prandtl Number</label>
+                    <div class="slider-container">
+                        <input type="range" id="sigma-slider" min="1" max="20" step="0.1" value="10">
+                        <span id="sigma-value" class="slider-value">10.00</span>
+                    </div>
+                </div>
+
+                <div class="param-group">
+                    <label for="rho-slider">ρ (Rho) - Rayleigh Number</label>
+                    <div class="slider-container">
+                        <input type="range" id="rho-slider" min="1" max="50" step="0.1" value="28">
+                        <span id="rho-value" class="slider-value">28.00</span>
+                    </div>
+                </div>
+
+                <div class="param-group">
+                    <label for="beta-slider">β (Beta) - Geometric Factor</label>
+                    <div class="slider-container">
+                        <input type="range" id="beta-slider" min="0.1" max="10" step="0.01" value="2.67">
+                        <span id="beta-value" class="slider-value">2.67</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h2>Simulation Settings</h2>
+                
+                <div class="param-group">
+                    <label for="trajectory-count-slider">Number of Trajectories</label>
+                    <div class="slider-container">
+                        <input type="range" id="trajectory-count-slider" min="1" max="10" step="1" value="2">
+                        <span id="trajectory-count-value" class="slider-value">2</span>
+                    </div>
+                </div>
+
+                <div class="param-group">
+                    <label for="speed-slider">Simulation Speed</label>
+                    <div class="slider-container">
+                        <input type="range" id="speed-slider" min="0.1" max="5" step="0.1" value="1">
+                        <span id="speed-value" class="slider-value">1.0x</span>
+                    </div>
+                </div>
+
+                <div class="param-group">
+                    <label for="trail-length-slider">Trail Length</label>
+                    <div class="slider-container">
+                        <input type="range" id="trail-length-slider" min="100" max="5000" step="100" value="2000">
+                        <span id="trail-length-value" class="slider-value">2000</span>
+                    </div>
+                </div>
+
+                <div class="param-group">
+                    <label for="timestep-slider">Time Step (dt)</label>
+                    <div class="slider-container">
+                        <input type="range" id="timestep-slider" min="0.0001" max="0.0100" step="0.0001" value="0.001">
+                        <span id="timestep-value" class="slider-value">0.001</span>
+                    </div>
+                </div>
+
+                <div class="param-group">
+                    <label>
+                        <input type="checkbox" id="show-trails" checked>
+                        Show Trails
+                    </label>
+                </div>
+
+                <div class="param-group">
+                    <label>
+                        <input type="checkbox" id="auto-rotate" checked>
+                        Auto Rotate Camera
+                    </label>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h2>Initial Conditions</h2>
+                <div id="trajectory-configs" class="body-configs">
+                    <!-- Trajectory configurations will be dynamically generated -->
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h2>Data Management</h2>
+                <div class="button-group-vertical">
+                    <button id="export-btn" class="control-btn secondary">
+                        <span class="icon">💾</span> Export JSON
+                    </button>
+                    <button id="import-btn" class="control-btn secondary">
+                        <span class="icon">📁</span> Import JSON
+                    </button>
+                    <input type="file" id="file-input" accept=".json" style="display: none;">
+                    <button id="screenshot-btn" class="control-btn secondary">
+                        <span class="icon">📷</span> Screenshot
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <h2>Statistics</h2>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Steps:</span>
+                        <span id="steps-display" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Max Distance:</span>
+                        <span id="max-dist-display" class="stat-value">0.000</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Avg Velocity:</span>
+                        <span id="avg-vel-display" class="stat-value">0.000</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Footer Info -->
+    <footer class="footer">
+        <p>
+            <strong>Gravitation³</strong> • Lorenz Attractor Simulator 
+            • Using RK4 Integration • 
+            <a href="https://github.com" target="_blank">View on GitHub</a>
+        </p>
+    </footer>
+
+    <!-- Background Music -->
+    <audio id="bg-music" loop preload="auto">
+        <source src="../web/music/joan of arc. - barnes blvd.flac" type="audio/flac">
+    </audio>
+
+    <!-- Music Toggle Button -->
+    <button id="music-toggle" class="muted" title="Toggle Background Music">
+        <svg class="music-icon-unmuted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+        </svg>
+        <svg class="music-icon-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+    </button>
+
+    <!-- Scripts -->
+    <script src="../shared/export-schema.js"></script>
+    <script src="../shared/error-handler.js"></script>
+    <script src="../shared/server-helper.js"></script>
+    <script src="../shared/data-sender.js"></script>
+    <script src="../shared/ai-chatbot.js"></script>
+    <script src="simulator.js"></script>
+    <script src="visualizer.js"></script>
+    <script src="app.js"></script>
+    <script src="ai-integration.js"></script>
+    <script src="../web/music-player.js"></script>
+    <script>
+        // Configure AI Chatbot for Lorenz Attractor
+        if (window.AIChat) {
+            window.AIChat.configure({
+                simulationName: 'Lorenz-Attractor',
+                dataSource: window.simulator || null
+            });
+        }
+    </script>
+    <script>
+        // Mobile menu toggle
+        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+        const navLinks = document.querySelector('.nav-links');
+
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravitation³ - Three-Body Problem</title>
+    <link rel="stylesheet" href="../web/style.css">
+    <link rel="stylesheet" href="../web/nav.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .intro-container {
+            min-height: calc(100vh - 70px);
+            margin-top: 70px;
+            padding: 4rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at center, #1a1f3a 0%, #0a0e27 100%);
+        }
+
+        .intro-content {
+            text-align: center;
+            max-width: 700px;
+            padding: 3rem;
+            background: var(--bg-overlay, rgba(255, 255, 255, 0.05));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(10px);
+        }
+
+        .simulation-icon {
+            font-size: 6rem;
+            margin-bottom: 2rem;
+            animation: orbit 4s ease-in-out infinite;
+        }
+
+        .simulation-title {
+            font-size: 3rem;
+            font-weight: 700;
+            background: var(--gradient-warm);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .simulation-description {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+
+        .launch-button {
+            display: inline-block;
+            padding: 1rem 3rem;
+            background: var(--gradient-accent);
+            color: white;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .launch-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(0, 212, 255, 0.5);
+        }
+
+        .feature-preview {
+            text-align: left;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .feature-preview h3 {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .feature-preview ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-preview li {
+            color: var(--text-secondary);
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .feature-preview li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--accent-blue);
+            font-weight: bold;
+        }
+
+        @keyframes orbit {
+            0%, 100% { 
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% { 
+                transform: translateY(-10px) rotate(180deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Ribbon -->
+    <nav class="nav-ribbon">
+        <div class="nav-left">
+            <a href="../web/index.html" class="nav-logo">
+                <h1>Gravitation<sup>3</sup></h1>
+            </a>
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="../web/explore.html">
+                        <span class="nav-icon">🔭</span>
+                        <span>Explore Sims</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/ai.html">
+                        <span class="nav-icon">🤖</span>
+                        <span>AI & ML</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="../web/about.html">
+                        <span class="nav-icon">ℹ️</span>
+                        <span>About</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/docs.html">
+                        <span class="nav-icon">📚</span>
+                        <span>Documentation and Guides</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/mission.html">
+                        <span class="nav-icon">🎯</span>
+                        <span>Mission</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="../web/support.html">
+                        <span class="nav-icon">💬</span>
+                        <span>Support</span>
+                    </a>
+                </li>
+            </ul>
+            <button class="mobile-menu-toggle">☰</button>
+        </div>
+    </nav>
+
+    <!-- Background Music -->
+    <audio id="bg-music" loop>
+        <source src="../web/music/joan of arc. - barnes blvd.flac" type="audio/flac">
+        <source src="../web/music/joan of arc. - barnes blvd.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Music Player Button -->
+    <button id="music-toggle" aria-label="Toggle background music">
+        <svg class="music-icon-unmuted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v18c-5 0-8.96-4.03-8.96-9S7 3 12 3zm0 0c5 0 9 4.03 9 9s-4 9-9 9" />
+            <path d="M15 9l4 3-4 3" />
+        </svg>
+        <svg class="music-icon-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v18c-5 0-8.96-4.03-8.96-9S7 3 12 3z" />
+            <path d="M17 9l5 5m0-5l-5 5" stroke="currentColor" stroke-width="2" />
+        </svg>
+    </button>
+
+    <!-- Introduction Content -->
+    <div class="intro-container">
+        <div class="intro-content">
+            <div class="simulation-icon">🌌</div>
+            <h1 class="simulation-title">Three-Body Problem</h1>
+            <p class="simulation-description">
+                Explore the chaotic dance of celestial mechanics! The three-body problem
+                demonstrates how three masses interact under mutual gravitational attraction,
+                creating complex and unpredictable orbital patterns.
+            </p>
+            <a href="sim.html" class="launch-button">Launch Simulation</a>
+
+            <div class="feature-preview">
+                <h3>Features:</h3>
+                <ul>
+                    <li>Pure JavaScript physics engine (runs entirely in browser)</li>
+                    <li>Real-time 3D visualization with Three.js</li>
+                    <li>RK4 numerical integration for accuracy</li>
+                    <li>Famous presets: Figure-8, Lagrange points, Chaotic orbits</li>
+                    <li>Interactive body manipulation and configuration</li>
+                    <li>Trail rendering to visualize orbital paths</li>
+                    <li>Energy conservation tracking</li>
+                    <li>Export/import simulation data as JSON</li>
+                    <li>Adjustable simulation speed and parameters</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="../web/music-player.js"></script>
+    <script>
+        // Mobile menu toggle
+        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+        const navLinksLeft = document.querySelector('.nav-left .nav-links');
+        const navLinksRight = document.querySelector('.nav-right .nav-links');
+
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', () => {
+                if (navLinksLeft) navLinksLeft.classList.toggle('active');
+                if (navLinksRight) navLinksRight.classList.toggle('active');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,425 @@
+/**
+ * Mobile Responsive CSS for Gravitation³ Simulations
+ * Addresses HP-3: Mobile Responsiveness Issues
+ */
+
+/* Touch-friendly sizes - minimum 44x44px touch targets */
+@media (max-width: 768px) {
+    /* Navigation improvements */
+    .nav-ribbon {
+        flex-wrap: wrap;
+        padding: 10px 15px;
+    }
+
+    .nav-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: rgba(10, 14, 39, 0.98);
+        flex-direction: column;
+        padding: 20px;
+        gap: 10px;
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .nav-links.active {
+        display: flex;
+    }
+
+    .nav-link a {
+        padding: 15px 20px;
+        font-size: 16px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .mobile-menu-toggle {
+        display: block !important;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 10px;
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    /* Simulation header adjustments */
+    .sim-header {
+        flex-direction: column;
+        height: auto;
+        padding: 15px;
+        gap: 10px;
+        top: 60px;
+    }
+
+    .header-info {
+        flex-wrap: wrap;
+        gap: 15px;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .info-item {
+        font-size: 14px;
+    }
+
+    /* Container adjustments */
+    .container {
+        top: 140px;
+        flex-direction: column;
+        padding: 10px;
+    }
+
+    .canvas-container {
+        width: 100%;
+        height: 50vh;
+        min-height: 300px;
+        position: relative;
+    }
+
+    /* Control panel - make it scrollable below canvas */
+    .control-panel {
+        position: relative;
+        width: 100%;
+        height: auto;
+        max-height: none;
+        overflow-y: visible;
+        padding: 15px;
+        margin-top: 10px;
+    }
+
+    .panel-section {
+        margin-bottom: 20px;
+    }
+
+    .panel-section h2 {
+        font-size: 18px;
+        margin-bottom: 12px;
+    }
+
+    /* Button improvements - minimum touch target size */
+    .control-btn,
+    .preset-btn,
+    button {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 12px 20px;
+        font-size: 16px;
+        touch-action: manipulation;
+    }
+
+    .button-group {
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .preset-btn {
+        flex: 1 1 calc(50% - 5px);
+        min-width: 120px;
+    }
+
+    .control-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .control-group button {
+        width: 100%;
+    }
+
+    /* Slider improvements */
+    .slider-container input[type="range"] {
+        height: 44px;
+        padding: 10px 0;
+        cursor: pointer;
+    }
+
+    .slider-container input[type="range"]::-webkit-slider-thumb {
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+    }
+
+    .slider-container input[type="range"]::-moz-range-thumb {
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+    }
+
+    /* Checkbox and label improvements */
+    .param-group label {
+        font-size: 16px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+    }
+
+    input[type="checkbox"] {
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+    }
+
+    /* Input field improvements */
+    input[type="number"],
+    input[type="text"] {
+        min-height: 44px;
+        font-size: 16px;
+        padding: 10px 12px;
+    }
+
+    .coord-inputs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .coord-inputs input {
+        flex: 1;
+        min-width: 70px;
+    }
+
+    /* Body config cards */
+    .body-config {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .body-header {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .drag-toggle-btn {
+        min-width: 50px;
+        min-height: 44px;
+        font-size: 24px;
+    }
+
+    /* Stats display */
+    .stats {
+        font-size: 14px;
+    }
+
+    .stat-item {
+        padding: 10px 0;
+    }
+
+    /* Footer adjustments */
+    .footer {
+        position: relative;
+        padding: 20px 15px;
+        text-align: center;
+        font-size: 14px;
+    }
+
+    /* Music toggle button */
+    #music-toggle {
+        width: 50px;
+        height: 50px;
+        bottom: 80px;
+        right: 15px;
+    }
+
+    /* Hide certain elements on very small screens */
+    @media (max-width: 480px) {
+        .sim-title {
+            font-size: 16px;
+        }
+
+        .header-info .label {
+            display: none;
+        }
+
+        .preset-btn {
+            font-size: 14px;
+            padding: 10px 15px;
+        }
+
+        .body-name {
+            font-size: 14px;
+        }
+
+        .footer p {
+            font-size: 12px;
+        }
+    }
+}
+
+/* Tablet optimizations (768px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .control-panel {
+        width: 350px;
+    }
+
+    .canvas-container {
+        width: calc(100% - 350px);
+    }
+
+    /* Slightly larger touch targets for tablets */
+    .control-btn,
+    .preset-btn {
+        min-height: 48px;
+        font-size: 15px;
+    }
+
+    input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+    }
+
+    .slider-container input[type="range"]::-webkit-slider-thumb {
+        width: 20px;
+        height: 20px;
+    }
+
+    .slider-container input[type="range"]::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+/* Landscape mobile - optimize for horizontal space */
+@media (max-width: 900px) and (orientation: landscape) {
+    .container {
+        flex-direction: row;
+    }
+
+    .canvas-container {
+        width: 60%;
+        height: calc(100vh - 150px);
+    }
+
+    .control-panel {
+        width: 40%;
+        height: calc(100vh - 150px);
+        overflow-y: auto;
+    }
+
+    .sim-header {
+        flex-direction: row;
+        height: 60px;
+    }
+
+    .header-info {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        width: auto;
+    }
+}
+
+/* Touch gesture support hints */
+@media (hover: none) and (pointer: coarse) {
+    /* Add visual feedback for touch interactions */
+    button:active,
+    .control-btn:active,
+    .preset-btn:active {
+        transform: scale(0.95);
+        transition: transform 0.1s ease;
+    }
+
+    input[type="range"]:active {
+        transform: scaleY(1.1);
+    }
+
+    /* Larger tap areas for small elements */
+    .nav-icon {
+        font-size: 20px;
+    }
+
+    /* Prevent text selection during touch interactions */
+    button,
+    .control-btn,
+    .preset-btn,
+    label {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: rgba(0, 212, 255, 0.2);
+    }
+
+    /* Show a hint for camera controls on first load */
+    .canvas-container::after {
+        content: '👆 Use two fingers to rotate';
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 14px;
+        pointer-events: none;
+        opacity: 0;
+        animation: hintFadeInOut 4s ease-in-out;
+    }
+
+    @keyframes hintFadeInOut {
+        0%, 100% { opacity: 0; }
+        20%, 80% { opacity: 1; }
+    }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    /* Ensure crisp rendering on retina displays */
+    canvas {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .canvas-container::after {
+        animation: none;
+        display: none;
+    }
+}
+
+/* Dark mode support (already dark, but ensure consistency) */
+@media (prefers-color-scheme: dark) {
+    /* Ensure modal and overlays are dark friendly */
+    #sim-error-modal {
+        background: rgba(10, 14, 39, 0.98);
+        border-color: #ff4444;
+    }
+}
+
+/* Print styles - hide interactive elements */
+@media print {
+    .control-panel,
+    .nav-ribbon,
+    .sim-header,
+    .footer,
+    #music-toggle,
+    button {
+        display: none !important;
+    }
+
+    .canvas-container {
+        width: 100%;
+        height: 100vh;
+        position: static;
+    }
+
+    .container {
+        top: 0;
+        position: static;
+    }
+}

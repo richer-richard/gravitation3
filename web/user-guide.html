@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌌</text></svg>">
+    <title>Gravitation³ - User Guide</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="nav.css">
+    <script defer src="../shared/browser-support.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        .docs-container { min-height: calc(100vh - 70px); margin-top: 70px; padding: 4rem 2rem; background: radial-gradient(ellipse at center, #1a1f3a 0%, #0a0e27 100%); }
+        .docs-content { max-width: 1000px; margin: 0 auto; }
+        .docs-header { text-align: center; margin-bottom: 3rem; }
+        .docs-title { font-size: 3rem; font-weight: 700; background: var(--gradient-accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 1rem; animation: fadeInUp 1s ease; }
+        .docs-subtitle { font-size: 1.2rem; color: var(--text-secondary); animation: fadeInUp 1s ease 0.2s both; }
+        .docs-section { background: var(--bg-overlay, rgba(255, 255, 255, 0.05)); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 2rem; margin-bottom: 2rem; opacity: 0; animation: fadeInUp 0.8s ease forwards; }
+        .docs-section:nth-of-type(1) { animation-delay: 0.3s; }
+        .docs-section:nth-of-type(2) { animation-delay: 0.4s; }
+        .docs-section:nth-of-type(3) { animation-delay: 0.5s; }
+        .docs-section:nth-of-type(4) { animation-delay: 0.6s; }
+        .docs-section:nth-of-type(5) { animation-delay: 0.7s; }
+        .docs-section:nth-of-type(6) { animation-delay: 0.8s; }
+        .docs-section:nth-of-type(7) { animation-delay: 0.9s; }
+        .docs-section:nth-of-type(8) { animation-delay: 1.0s; }
+        .docs-section h2 { font-size: 2rem; font-weight: 600; color: var(--text-primary); margin-bottom: 1rem; border-bottom: 2px solid var(--accent-blue); padding-bottom: 0.5rem; }
+        .docs-section h3 { font-size: 1.5rem; font-weight: 600; color: var(--accent-blue); margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        .docs-section p { font-size: 1.05rem; color: var(--text-secondary); line-height: 1.8; margin-bottom: 1rem; }
+        .docs-section ul { color: var(--text-secondary); line-height: 1.8; margin-left: 1.5rem; margin-bottom: 1rem; }
+        .docs-section ol { color: var(--text-secondary); line-height: 1.8; margin-left: 2.5rem; margin-bottom: 1rem; }
+        .docs-section li { margin-bottom: 0.5rem; }
+        .info-box { background: rgba(0, 212, 255, 0.1); border-left: 4px solid var(--accent-blue); padding: 1rem; margin: 1rem 0; border-radius: var(--radius-sm); }
+        .info-box p { margin: 0; }
+        .tip-box { background: rgba(76, 175, 80, 0.1); border-left: 4px solid #4caf50; padding: 1rem; margin: 1rem 0; border-radius: var(--radius-sm); }
+        .tip-box p { margin: 0; color: var(--text-secondary); }
+        .warning-box { background: rgba(255, 152, 0, 0.1); border-left: 4px solid #ff9800; padding: 1rem; margin: 1rem 0; border-radius: var(--radius-sm); }
+        .warning-box p { margin: 0; color: var(--text-secondary); }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 768px) { .docs-title { font-size: 2rem; } .docs-section { padding: 1.5rem; } }
+    </style>
+</head>
+<body>
+    <nav class="nav-ribbon">
+        <div class="nav-left">
+            <a href="index.html" class="nav-logo"><h1>Gravitation<sup>3</sup></h1></a>
+            <ul class="nav-links">
+                <li class="nav-link"><a href="explore.html"><span class="nav-icon">🔭</span><span>Explore Sims</span></a></li>
+                <li class="nav-link"><a href="ai.html"><span class="nav-icon">🤖</span><span>AI & ML</span></a></li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li class="nav-link"><a href="about.html"><span class="nav-icon">ℹ️</span><span>About</span></a></li>
+                <li class="nav-link"><a href="docs.html"><span class="nav-icon">📚</span><span>Documentation and Guides</span></a></li>
+                <li class="nav-link"><a href="mission.html"><span class="nav-icon">🎯</span><span>Mission</span></a></li>
+                <li class="nav-link"><a href="support.html"><span class="nav-icon">💬</span><span>Support</span></a></li>
+            </ul>
+            <button class="mobile-menu-toggle">☰</button>
+        </div>
+    </nav>
+
+    <div class="docs-container">
+        <div class="docs-content">
+            <div class="docs-header">
+                <h1 class="docs-title">User Guide</h1>
+                <p class="docs-subtitle">Your complete guide to exploring gravitational physics simulations</p>
+            </div>
+
+            <div class="docs-section">
+                <h2>Welcome to Gravitation³!</h2>
+                <p>Welcome to your journey into the fascinating world of gravitational physics! Whether you've never used a physics simulation before or you're an experienced user, this guide will walk you through everything you need to know to get the most out of Gravitation³.</p>
+                <p>Think of this simulator as your personal physics laboratory where you can explore how gravity works, observe the famous three-body problem, and discover beautiful patterns from chaos theory. Best part? It runs entirely in your web browser!</p>
+                <div class="info-box">
+                    <p><strong>New to Physics Simulations?</strong> No worries! We'll explain everything step by step. You just need curiosity and willingness to experiment.</p>
+                </div>
+            </div>
+
+            <div class="docs-section">
+                <h2>Getting Started</h2>
+                <h3>Your First Simulation</h3>
+                <ol>
+                    <li>Click "Explore Sims" from the main menu</li>
+                    <li>Choose a simulation (Three-Body Problem recommended for beginners)</li>
+                    <li>Wait for the 3D visualization to load</li>
+                    <li>Click the Start button (▶) to begin</li>
+                </ol>
+                <p>You'll see three colored spheres (red, green, blue) moving and leaving trails. They're pulling on each other with gravity, just like real celestial bodies! The default Figure-8 orbit shows three bodies chasing each other in a beautiful repeating pattern.</p>
+                <div class="tip-box">
+                    <p><strong>First-Timer Tip:</strong> Let the Figure-8 run for 30+ seconds to see the complete pattern. It's mesmerizing!</p>
+                </div>
+            </div>
+
+            <div class="docs-section">
+                <h2>Understanding the Interface</h2>
+                <h3>Header Information</h3>
+                <p><strong>Time Display:</strong> Shows simulation time (not real-world time). If you set speed to 2x, simulation time moves twice as fast.</p>
+                <p><strong>Energy Display:</strong> Critical accuracy indicator! Energy should stay constant in a closed system.</p>
+                <ul>
+                    <li><strong>Good:</strong> Drift less than 0.01%</li>
+                    <li><strong>Acceptable:</strong> 0.01% - 0.1% drift</li>
+                    <li><strong>Problem:</strong> Over 1% drift - reduce time step!</li>
+                </ul>
+                <p><strong>FPS (Frames Per Second):</strong> Rendering smoothness. 60 FPS is ideal, 30-60 is good, below 30 means reduce trail length.</p>
+                
+                <h3>Camera Controls</h3>
+                <p><strong>Desktop/Laptop:</strong></p>
+                <ul>
+                    <li><strong>Left Click + Drag:</strong> Rotate view around the scene</li>
+                    <li><strong>Right Click + Drag:</strong> Pan the view</li>
+                    <li><strong>Scroll Wheel:</strong> Zoom in/out</li>
+                </ul>
+                <p><strong>Tablets/Phones:</strong></p>
+                <ul>
+                    <li><strong>One Finger:</strong> Rotate view</li>
+                    <li><strong>Pinch:</strong> Zoom</li>
+                    <li><strong>Two Fingers:</strong> Pan</li>
+                </ul>
+                <div class="tip-box">
+                    <p><strong>Pro Tip:</strong> Try different viewing angles! The Figure-8 looks completely different from above versus from the side.</p>
+                </div>
+            </div>
+
+            <div class="docs-section">
+                <h2>Control Panel Guide</h2>
+                <h3>Simulation Presets</h3>
+                <p><strong>Figure-8 Orbit:</strong> Three equal-mass bodies in a periodic figure-8 pattern. Discovered in 1993, this elegant solution repeats every 6.32 time units. Perfect for showing that three-body systems CAN be predictable!</p>
+                <p><strong>Lagrange Triangle:</strong> Bodies maintain an equilateral triangle while orbiting their center of mass. Perfectly stable for equal masses. Example: Jupiter's Trojan asteroids!</p>
+                <p><strong>Chaotic System:</strong> Unpredictable motion demonstrating chaos theory. Expect close encounters and wild swings. Sensitive to initial conditions - run it twice, get different results!</p>
+                <p><strong>Custom:</strong> Your experimental playground! Set your own masses, positions, and velocities. Try discovering new periodic orbits!</p>
+                
+                <h3>Playback Controls</h3>
+                <ul>
+                    <li><strong>Start (▶):</strong> Begin or resume simulation</li>
+                    <li><strong>Pause (⏸):</strong> Freeze time to examine configurations</li>
+                    <li><strong>Reset (↻):</strong> Return to initial conditions</li>
+                </ul>
+                
+                <h3>Key Parameters</h3>
+                <p><strong>Simulation Speed (0.1x - 5.0x):</strong> Controls how fast simulation runs. Higher = faster but may reduce accuracy. Default 1.0x is recommended.</p>
+                <p><strong>Trail Length (100 - 5000 points):</strong> How long orbital trails persist. Long trails show beautiful patterns but may impact performance. Default 2000 is balanced.</p>
+                <p><strong>Time Step dt (0.0001 - 0.01):</strong> Accuracy vs speed tradeoff. Smaller = more accurate but slower. Larger = faster but less accurate. Default 0.001 works well for most cases.</p>
+                <div class="warning-box">
+                    <p><strong>Important:</strong> If you see high energy drift, DECREASE the time step for better accuracy!</p>
+                </div>
+            </div>
+
+            <div class="docs-section">
+                <h2>Advanced Features</h2>
+                
+                <h3>Data Export/Import</h3>
+                <p><strong>Exporting:</strong> Click "Export JSON" to save current configuration. File downloads automatically with timestamp.</p>
+                <p><strong>Importing:</strong> Click "Import JSON" and select a saved file to load a previous configuration. Great for continuing simulations or sharing interesting setups!</p>
+                
+                <h3>Visual Settings</h3>
+                <p><strong>Trail Options:</strong></p>
+                <ul>
+                    <li><strong>Long (3000+):</strong> Beautiful full patterns, may slow performance</li>
+                    <li><strong>Medium (1000-2000):</strong> Balanced recent history</li>
+                    <li><strong>Short (100-500):</strong> Focus on current motion</li>
+                </ul>
+                <p><strong>Display Toggles:</strong> Show/hide velocity vectors, enable auto-center on center of mass, adjust body sizes.</p>
+            </div>
+
+            <div class="docs-section">
+                <h2>Tips & Best Practices</h2>
+                
+                <h3>Getting the Best Results</h3>
+                <ul>
+                    <li><strong>Start Simple:</strong> Begin with Figure-8 or Lagrange presets before trying chaotic systems</li>
+                    <li><strong>Watch Energy:</strong> Keep an eye on energy drift percentage. It's your accuracy gauge!</li>
+                    <li><strong>Adjust for Performance:</strong> If simulation runs slow, reduce trail length first, then increase time step</li>
+                    <li><strong>Experiment with Views:</strong> Different camera angles reveal different aspects of the motion</li>
+                    <li><strong>Use Pause:</strong> Freeze time to examine interesting configurations or take screenshots</li>
+                </ul>
+                
+                <h3>Understanding Behavior</h3>
+                <p><strong>Periodic Orbits (Figure-8, Lagrange):</strong> These repeat perfectly. Energy should stay rock-solid constant. If it drifts, something's wrong with your settings.</p>
+                <p><strong>Chaotic Systems:</strong> Never repeat exactly. Small changes lead to completely different outcomes. This is the famous "butterfly effect" - the hallmark of chaos theory!</p>
+                <p><strong>Close Encounters:</strong> When bodies pass near each other, they experience strong forces. This requires smaller time steps for accuracy. If energy spikes during close encounters, reduce dt.</p>
+            </div>
+
+            <div class="docs-section">
+                <h2>Troubleshooting</h2>
+                
+                <h3>Common Issues & Solutions</h3>
+                
+                <p><strong>Simulation Running Slowly:</strong></p>
+                <ul>
+                    <li>Reduce trail length to 1000 or lower</li>
+                    <li>Increase time step slightly (but watch energy!)</li>
+                    <li>Disable velocity vectors if shown</li>
+                    <li>Close other browser tabs</li>
+                </ul>
+                
+                <p><strong>High Energy Drift:</strong></p>
+                <ul>
+                    <li>Decrease time step (dt) - this is the main solution</li>
+                    <li>For chaotic systems, try dt = 0.0005 or smaller</li>
+                    <li>Check for close encounters between bodies</li>
+                    <li>Consider using a different preset</li>
+                </ul>
+                
+                <p><strong>Bodies Moving Too Fast/Slow:</strong></p>
+                <ul>
+                    <li>Adjust simulation speed multiplier</li>
+                    <li>Check initial velocity values in custom presets</li>
+                    <li>Reset and try a different preset</li>
+                </ul>
+                
+                <p><strong>Trails Look Choppy:</strong></p>
+                <ul>
+                    <li>Increase trail length for smoother appearance</li>
+                    <li>Reduce simulation speed for better visualization</li>
+                    <li>Check that FPS is above 30</li>
+                </ul>
+                
+                <p><strong>Bodies Escape or Collide:</strong></p>
+                <ul>
+                    <li>This can happen in chaotic systems - it's actually realistic!</li>
+                    <li>Try a smaller time step for better accuracy near close encounters</li>
+                    <li>Reset and try again - chaotic systems behave differently each run</li>
+                    <li>Use stable presets (Figure-8, Lagrange) if you want predictable behavior</li>
+                </ul>
+                
+                <div class="warning-box">
+                    <p><strong>Remember:</strong> Chaos means unpredictability is normal! If the chaotic preset does something wild, that's physics, not a bug.</p>
+                </div>
+            </div>
+
+            <div class="docs-section">
+                <h2>Keyboard Shortcuts</h2>
+                <p>Speed up your workflow with these handy shortcuts:</p>
+                <ul>
+                    <li><strong>Space:</strong> Play/Pause simulation</li>
+                    <li><strong>R:</strong> Reset to initial conditions</li>
+                    <li><strong>S:</strong> Take screenshot</li>
+                    <li><strong>+/-:</strong> Adjust simulation speed</li>
+                    <li><strong>Arrow Keys:</strong> Rotate camera view</li>
+                </ul>
+            </div>
+
+            <div class="docs-section">
+                <h2>Next Steps</h2>
+                <p>Now that you know the basics, here's how to deepen your exploration:</p>
+                <ol>
+                    <li><strong>Read the Physics Documentation:</strong> Understand the mathematics behind what you're seeing</li>
+                    <li><strong>Try All Presets:</strong> Each demonstrates different physics principles</li>
+                    <li><strong>Experiment with Custom Settings:</strong> Can you discover a new periodic orbit?</li>
+                    <li><strong>Explore Other Simulations:</strong> Try the Lorenz, Rössler, Clifford, and Hopalong attractors!</li>
+                    <li><strong>Share Your Discoveries:</strong> Export interesting configurations and share them</li>
+                </ol>
+                
+                <div class="info-box">
+                    <p><strong>Want to Learn More?</strong> Check out our Physics & Mathematics documentation for deep dives into the theory behind each simulation. It's written for beginners!</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+        const navLinksLeft = document.querySelector('.nav-left .nav-links');
+        const navLinksRight = document.querySelector('.nav-right .nav-links');
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', () => {
+                navLinksLeft.classList.toggle('active');
+                navLinksRight.classList.toggle('active');
+            });
+        }
+    </script>
+    <!-- Background Music -->
+    <audio id="bg-music" loop>
+        <source src="music/joan of arc. - barnes blvd.flac" type="audio/flac">
+        <source src="music/joan of arc. - barnes blvd.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Music Player Button -->
+    <button id="music-toggle" aria-label="Toggle background music">
+        <svg class="music-icon-unmuted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v18c-5 0-8.96-4.03-8.96-9S7 3 12 3zm0 0c5 0 9 4.03 9 9s-4 9-9 9" />
+            <path d="M15 9l4 3-4 3" />
+        </svg>
+        <svg class="music-icon-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v18c-5 0-8.96-4.03-8.96-9S7 3 12 3z" />
+            <path d="M17 9l5 5m0-5l-5 5" stroke="currentColor" stroke-width="2" />
+        </svg>
+    </button>
+
+    <script src="music-player.js"></script>
+</body>
+</html>

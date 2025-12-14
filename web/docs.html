@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌌</text></svg>">
+    <title>Gravitation³ - Documentation</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="nav.css">
+    <script defer src="../shared/browser-support.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .docs-container {
+            min-height: calc(100vh - 70px);
+            margin-top: 70px;
+            padding: 4rem 2rem;
+            background: radial-gradient(ellipse at center, #1a1f3a 0%, #0a0e27 100%);
+        }
+
+        .docs-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .docs-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .docs-title {
+            font-size: 3rem;
+            font-weight: 700;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            animation: fadeInUp 1s ease;
+        }
+
+        .docs-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            animation: fadeInUp 1s ease 0.2s both;
+        }
+
+        .docs-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .doc-card {
+            background: var(--bg-overlay, rgba(255, 255, 255, 0.05));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        .doc-card:nth-child(1) {
+            animation-delay: 0.4s;
+        }
+
+        .doc-card:nth-child(2) {
+            animation-delay: 0.6s;
+        }
+
+        .doc-card:nth-child(3) {
+            animation-delay: 0.8s;
+        }
+
+        .doc-card:nth-child(4) {
+            animation-delay: 1.0s;
+        }
+
+        .doc-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-blue);
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0, 212, 255, 0.3);
+        }
+
+        .doc-icon {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .doc-card:nth-child(2) .doc-icon {
+            animation-delay: -1s;
+        }
+
+        .doc-card:nth-child(3) .doc-icon {
+            animation-delay: -2s;
+        }
+
+        .doc-card:nth-child(4) .doc-icon {
+            animation-delay: -3s;
+        }
+
+        .doc-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .doc-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .doc-topics {
+            text-align: left;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .doc-topics h4 {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .doc-topics ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .doc-topics li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .doc-topics li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--accent-blue);
+            font-weight: bold;
+        }
+
+        .doc-button {
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            background: var(--gradient-accent);
+            color: white;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-top: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .doc-card:hover .doc-button {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .docs-title {
+                font-size: 2rem;
+            }
+
+            .docs-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Ribbon -->
+    <nav class="nav-ribbon">
+        <div class="nav-left">
+            <a href="index.html" class="nav-logo">
+                <h1>Gravitation<sup>3</sup></h1>
+            </a>
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="explore.html">
+                        <span class="nav-icon">🔭</span>
+                        <span>Explore Sims</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="ai.html">
+                        <span class="nav-icon">🤖</span>
+                        <span>AI & ML</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li class="nav-link">
+                    <a href="about.html">
+                        <span class="nav-icon">ℹ️</span>
+                        <span>About</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="docs.html">
+                        <span class="nav-icon">📚</span>
+                        <span>Documentation and Guides</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="mission.html">
+                        <span class="nav-icon">🎯</span>
+                        <span>Mission</span>
+                    </a>
+                </li>
+                <li class="nav-link">
+                    <a href="support.html">
+                        <span class="nav-icon">💬</span>
+                        <span>Support</span>
+                    </a>
+                </li>
+            </ul>
+            <button class="mobile-menu-toggle">☰</button>
+        </div>
+    </nav>
+
+    <!-- Documentation Content -->
+    <div class="docs-container">
+        <div class="docs-content">
+            <div class="docs-header">
+                <h1 class="docs-title">Documentation & Guides</h1>
+                <p class="docs-subtitle">Learn, explore, and understand the science behind the simulations</p>
+            </div>
+
+            <div class="docs-grid">
+                <!-- User Guide Card -->
+                <a href="user-guide.html" class="doc-card">
+                    <div class="doc-icon">📖</div>
+                    <h2 class="doc-title">User Guide</h2>
+                    <p class="doc-description">
+                        Learn how to use Gravitation³ simulations effectively. Step-by-step tutorials, 
+                        tips, and best practices for exploring chaotic systems.
+                    </p>
+                    <div class="doc-topics">
+                        <h4>Topics Covered:</h4>
+                        <ul>
+                            <li>Getting Started</li>
+                            <li>Interface Overview</li>
+                            <li>Working with Presets</li>
+                            <li>Customizing Simulations</li>
+                            <li>Exporting & Sharing</li>
+                            <li>Keyboard Shortcuts</li>
+                        </ul>
+                    </div>
+                    <span class="doc-button">Read User Guide →</span>
+                </a>
+
+                <!-- Math & Physics Tutorials Card (NEW) -->
+                <a href="tutorials.html" class="doc-card">
+                    <div class="doc-icon">🎓</div>
+                    <h2 class="doc-title">Math & Physics Tutorials</h2>
+                    <p class="doc-description">
+                        Learn the fundamental math and physics concepts needed to understand 
+                        the simulations. Perfect for beginners and students!
+                    </p>
+                    <div class="doc-topics">
+                        <h4>Topics Covered:</h4>
+                        <ul>
+                            <li>Introduction to Vectors</li>
+                            <li>Understanding Calculus Basics</li>
+                            <li>Force and Motion</li>
+                            <li>What is Chaos?</li>
+                            <li>Differential Equations</li>
+                            <li>Energy Conservation</li>
+                        </ul>
+                    </div>
+                    <span class="doc-button">Start Learning →</span>
+                </a>
+
+                <!-- Model Formulas Card (renamed from Physics & Math) -->
+                <a href="physics.html" class="doc-card">
+                    <div class="doc-icon">⚛️</div>
+                    <h2 class="doc-title">Model Formulas</h2>
+                    <p class="doc-description">
+                        Technical documentation of the mathematical models and equations 
+                        used in each simulation. For advanced users and researchers.
+                    </p>
+                    <div class="doc-topics">
+                        <h4>Topics Covered:</h4>
+                        <ul>
+                            <li>Three-Body Problem Equations</li>
+                            <li>Lorenz Attractor Model</li>
+                            <li>Rössler System</li>
+                            <li>Fluid Dynamics Formulas</li>
+                            <li>RK4 Integration Method</li>
+                            <li>Numerical Simulation Details</li>
+                        </ul>
+                    </div>
+                    <span class="doc-button">View Formulas →</span>
+                </a>
+
+                <!-- AI & Machine Learning Card -->
+                <a href="ai.html" class="doc-card">
+                    <div class="doc-icon">🤖</div>
+                    <h2 class="doc-title">AI & Machine Learning</h2>
+                    <p class="doc-description">
+                        Explore how neural networks predict chaotic dynamics. Learn about our 
+                        LSTM-Transformer models and their applications in simulation.
+                    </p>
+                    <div class="doc-topics">
+                        <h4>Topics Covered:</h4>
+                        <ul>
+                            <li>Three-Body Prediction Model</li>
+                            <li>LSTM-Transformer Architecture</li>
+                            <li>Training Process & Data</li>
+                            <li>Model Performance Metrics</li>
+                            <li>Using Trained Models</li>
+                            <li>Future AI Applications</li>
+                        </ul>
+                    </div>
+                    <span class="doc-button">Explore AI Models →</span>
+                </a>
+            </div>
+
+            <!-- Setup & Configuration Section -->
+            <div style="margin-top: 5rem; padding: 3rem 2rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: var(--radius-lg);">
+                <h2 style="font-size: 2.5rem; color: var(--accent-blue); margin-bottom: 2rem; text-align: center;">
+                    ⚙️ Setup & Configuration
+                </h2>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                    <!-- Getting Started Section -->
+                    <div style="padding: 2rem; background: var(--bg-overlay, rgba(255, 255, 255, 0.05)); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <h3 style="color: var(--accent-blue); margin-bottom: 1rem; font-size: 1.5rem;">🚀 Quick Start (No Setup Required)</h3>
+                        <p style="color: var(--text-secondary); line-height: 1.8; margin-bottom: 1rem;">
+                            Gravitation³ works entirely in your browser with no installation needed!
+                        </p>
+                        <ol style="color: var(--text-secondary); line-height: 1.8; margin-left: 1.5rem;">
+                            <li>Open any simulation HTML file in a modern browser</li>
+                            <li>Click "Start" to begin the simulation</li>
+                            <li>Adjust parameters in real-time</li>
+                            <li>Watch as AI makes predictions (if servers running)</li>
+                        </ol>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 1rem;">
+                            <strong>Supported Browsers:</strong> Chrome, Firefox, Safari, Edge (modern versions)
+                        </p>
+                    </div>
+
+                    <!-- Developer Setup Section -->
+                    <div style="padding: 2rem; background: var(--bg-overlay, rgba(255, 255, 255, 0.05)); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <h3 style="color: var(--accent-blue); margin-bottom: 1rem; font-size: 1.5rem;">💻 Developer Setup</h3>
+                        <p style="color: var(--text-secondary); line-height: 1.8; margin-bottom: 1rem;">
+                            For AI model training and advanced setup:
+                        </p>
+                        <div style="background: rgba(0, 0, 0, 0.3); padding: 1rem; border-radius: var(--radius-sm); font-family: monospace; font-size: 0.9rem; color: #4ade80; overflow-x: auto;">
+# Prerequisites<br>
+python3 -m venv venv<br>
+source venv/bin/activate<br>
+<br>
+# Install dependencies<br>
+pip install -r scripts/python_training/requirements.txt<br>
+npm install (for model management)
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 1rem;">
+                            Requires: Python 3.11+, Node.js 16+
+                        </p>
+                    </div>
+
+                    <!-- AI Server Setup Section -->
+                    <div style="padding: 2rem; background: var(--bg-overlay, rgba(255, 255, 255, 0.05)); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <h3 style="color: var(--accent-blue); margin-bottom: 1rem; font-size: 1.5rem;">🤖 AI & Data Servers</h3>
+                        <p style="color: var(--text-secondary); line-height: 1.8; margin-bottom: 1rem;">
+                            To enable AI predictions and data collection:
+                        </p>
+                        <div style="background: rgba(0, 0, 0, 0.3); padding: 1rem; border-radius: var(--radius-sm); font-family: monospace; font-size: 0.9rem; color: #4ade80; overflow-x: auto;">
+# Terminal 1: LLM Chatbot Server (Port 5001)<br>
+cd api && ./start_llm_server.sh<br>
+# Output: http://localhost:5001/api/chat<br>
+<br>
+# Terminal 2: Data Collection Server (Port 5002)<br>
+cd api && ./start_data_server.sh<br>
+# Output: http://localhost:5002<br>
+<br>
+# Terminal 3: AI Model Server (Port 5003, optional)<br>
+cd api && ./start_model_server.sh<br>
+# Output: http://localhost:5003/api/health
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 1rem;">
+                            Optional: Set OPENAI_API_KEY for GPT-5 chatbot
+                        </p>
+                    </div>
+
+                    <!-- Data Collection Section -->
+                    <div style="padding: 2rem; background: var(--bg-overlay, rgba(255, 255, 255, 0.05)); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <h3 style="color: var(--accent-blue); margin-bottom: 1rem; font-size: 1.5rem;">📊 Training Data Collection</h3>
+                        <p style="color: var(--text-secondary); line-height: 1.8; margin-bottom: 1rem;">
+                            Collect training data for AI models:
+                        </p>
+                        <div style="background: rgba(0, 0, 0, 0.3); padding: 1rem; border-radius: var(--radius-sm); font-family: monospace; font-size: 0.9rem; color: #4ade80; overflow-x: auto;">
+# 1. Start data server<br>
+./api/start_data_server.sh<br>
+<br>
+# 2. Open simulation in browser<br>
+# e.g., lorenz-attractor/sim.html<br>
+<br>
+# 3. In browser console (F12):<br>
+window.lorenzAI.startDataCollection()<br>
+<br>
+# 4. Let simulation run 10+ seconds<br>
+window.lorenzAI.stopDataCollection()<br>
+<br>
+# Data saved to: ai_data/lorenz-attractor/
+                        </div>
+                    </div>
+
+                    <!-- Model Training Section -->
+                    <div style="padding: 2rem; background: var(--bg-overlay, rgba(255, 255, 255, 0.05)); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <h3 style="color: var(--accent-blue); margin-bottom: 1rem; font-size: 1.5rem;">🧠 Training AI Models</h3>
+                        <p style="color: var(--text-secondary); line-height: 1.8; margin-bottom: 1rem;">
+                            Train neural network models with collected data:
+                        </p>
+                        <div style="background: rgba(0, 0, 0, 0.3); padding: 1rem; border-radius: var(--radius-sm); font-family: monospace; font-size: 0.9rem; color: #4ade80; overflow-x: auto;">
+# Train individual model<br>
+cd scripts/python_training<br>
+python train_lorenz.py<br>
+<br>
+# Or train all models<br>
+python train_all_simulations.py<br>
+<br>
+# Models saved to:<br>
+# ai_models/{simulation}/
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 1rem;">
+                            Target R² ≥ 0.95, 100+ epochs, GPU recommended
+                        </p>
+                    </div>
+
+                    <!-- Port Reference Section -->
+                    <div style="padding: 2rem; background: var(--bg-overlay, rgba(255, 255, 255, 0.05)); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <h3 style="color: var(--accent-blue); margin-bottom: 1rem; font-size: 1.5rem;">🔌 Server Port Reference</h3>
+                        <ul style="color: var(--text-secondary); line-height: 2; margin-left: 1.5rem; list-style: none; padding: 0;">
+                            <li style="padding: 0.5rem 0;"><strong style="color: var(--accent-blue);">5001</strong> - LLM Chatbot Server (GPT-5 chat)</li>
+                            <li style="padding: 0.5rem 0;"><strong style="color: var(--accent-blue);">5002</strong> - Data Collection Server</li>
+                            <li style="padding: 0.5rem 0;"><strong style="color: var(--accent-blue);">5003</strong> - AI Model Server (inference)</li>
+                        </ul>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 1rem;">
+                            Check ports: <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 3px;">lsof -i :{port}</code>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Configuration Options -->
+                <div style="margin-top: 2rem; padding: 2rem; background: rgba(74, 144, 226, 0.1); border: 1px solid rgba(74, 144, 226, 0.3); border-radius: var(--radius-md);">
+                    <h3 style="color: var(--accent-blue); margin-bottom: 1rem;">⚙️ Configuration</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.8; margin-bottom: 1rem;">
+                        <strong>Environment Variables:</strong>
+                    </p>
+                    <div style="background: rgba(0, 0, 0, 0.3); padding: 1rem; border-radius: var(--radius-sm); font-family: monospace; font-size: 0.9rem; color: #4ade80; overflow-x: auto; margin-bottom: 1rem;">
+# AI & Data Server Configuration<br>
+OPENAI_API_KEY=sk-proj-... (for GPT-5)<br>
+DATA_SERVER_URL=http://localhost:5678<br>
+LLM_SERVER_PORT=5002<br>
+OPENAI_MODEL=gpt-5<br>
+<br>
+# Optional<br>
+PYTHON_ENV=venv/bin/python3<br>
+GPU_ENABLED=true (for GPU training)
+                    </div>
+                    <p style="color: var(--text-secondary); line-height: 1.8;">
+                        <strong>Key Directories:</strong>
+                    </p>
+                    <ul style="color: var(--text-secondary); line-height: 1.8; margin-left: 1.5rem;">
+                        <li><code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 3px;">ai_data/</code> - Training datasets</li>
+                        <li><code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 3px;">ai_models/</code> - Trained model files (.keras)</li>
+                        <li><code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 3px;">scripts/python_training/</code> - Training scripts</li>
+                        <li><code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 3px;">api/</code> - Backend servers</li>
+                    </ul>
+                </div>
+
+                <!-- Troubleshooting -->
+                <div style="margin-top: 2rem; padding: 2rem; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: var(--radius-md);">
+                    <h3 style="color: #fbbf24; margin-bottom: 1rem;">🔧 Troubleshooting</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                        <div>
+                            <p style="color: var(--text-secondary); margin-bottom: 0.5rem;"><strong>Port Already in Use</strong></p>
+                            <p style="color: var(--text-muted); font-size: 0.9rem;">
+                                <code style="background: rgba(0,0,0,0.3); padding: 0.2rem 0.4rem; border-radius: 3px;">lsof -ti:5001 | xargs kill</code>
+                            </p>
+                        </div>
+                        <div>
+                            <p style="color: var(--text-secondary); margin-bottom: 0.5rem;"><strong>AI Not Connecting</strong></p>
+                            <p style="color: var(--text-muted); font-size: 0.9rem;">Check server logs and ensure ports configured correctly</p>
+                        </div>
+                        <div>
+                            <p style="color: var(--text-secondary); margin-bottom: 0.5rem;"><strong>Training Fails</strong></p>
+                            <p style="color: var(--text-muted); font-size: 0.9rem;">Verify data files exist in ai_data/ folders</p>
+                        </div>
+                        <div>
+                            <p style="color: var(--text-secondary); margin-bottom: 0.5rem;"><strong>No Data Collected</strong></p>
+                            <p style="color: var(--text-muted); font-size: 0.9rem;">Ensure data server running before starting simulation</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
+        const navLinksLeft = document.querySelector('.nav-left .nav-links');
+        const navLinksRight = document.querySelector('.nav-right .nav-links');
+
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', () => {
+                navLinksLeft.classList.toggle('active');
+                navLinksRight.classList.toggle('active');
+            });
+        }
+    </script>
+    <!-- Background Music -->
+    <audio id="bg-music" loop>
+        <source src="music/joan of arc. - barnes blvd.flac" type="audio/flac">
+        <source src="music/joan of arc. - barnes blvd.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Music Player Button -->
+    <button id="music-toggle" aria-label="Toggle background music">
+        <svg class="music-icon-unmuted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v18c-5 0-8.96-4.03-8.96-9S7 3 12 3zm0 0c5 0 9 4.03 9 9s-4 9-9 9" />
+            <path d="M15 9l4 3-4 3" />
+        </svg>
+        <svg class="music-icon-muted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v18c-5 0-8.96-4.03-8.96-9S7 3 12 3z" />
+            <path d="M17 9l5 5m0-5l-5 5" stroke="currentColor" stroke-width="2" />
+        </svg>
+    </button>
+
+    <script src="music-player.js"></script>
+</body>
+</html>

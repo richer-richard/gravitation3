@@ -1,0 +1,30 @@
+{
+  "name": "gravitation-cubed-ai",
+  "version": "1.0.0",
+  "description": "AI training system for Gravitation³ physics simulators",
+  "main": "index.js",
+  "scripts": {
+    "generate-data": "node scripts/generate_training_data.js",
+    "train": "node scripts/train_classifier.js",
+    "train-predictor": "node scripts/train_surrogate.js",
+    "optimize": "node scripts/optimize_models.js",
+    "test": "node tests/test_data_generation.js"
+  },
+  "keywords": [
+    "ai",
+    "tensorflow",
+    "physics",
+    "simulation",
+    "chaos"
+  ],
+  "author": "Gravitation³",
+  "license": "MIT",
+  "dependencies": {
+    "@tensorflow/tfjs-node": "^4.13.0"
+  },
+  "devDependencies": {
+    "chalk": "^4.1.2",
+    "cli-progress": "^3.12.0",
+    "commander": "^11.1.0"
+  }
+}
