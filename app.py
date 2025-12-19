@@ -12,6 +12,7 @@ import time
 import signal
 import atexit
 from pathlib import Path
+from typing import Optional
 
 # Get the directory where this script is located
 SCRIPT_DIR = Path(__file__).parent.resolve()
@@ -42,7 +43,7 @@ SERVERS = [
 ]
 
 # Store processes for cleanup
-processes = []
+processes: list[Optional[subprocess.Popen[str]]] = []
 
 
 def cleanup():

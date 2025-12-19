@@ -22,15 +22,17 @@ if [ ! -d "$PROJECT_DIR/venv" ]; then
     exit 1
 fi
 
-# Activate virtual environment
-echo "🔧 Activating virtual environment..."
-source "$PROJECT_DIR/venv/bin/activate"
+# Set Python path explicitly (more reliable than sourcing activate)
+PYTHON="$PROJECT_DIR/venv/bin/python"
+PIP="$PROJECT_DIR/venv/bin/pip"
+
+echo "🔧 Using Python: $PYTHON"
 
 # Check if Flask is installed
-if ! python -c "import flask" 2>/dev/null; then
+if ! "$PYTHON" -c "import flask" 2>/dev/null; then
     echo "❌ Flask not installed in virtual environment"
     echo "Installing requirements..."
-    pip install -r "$SCRIPT_DIR/requirements.txt"
+    "$PIP" install -r "$SCRIPT_DIR/requirements.txt"
 fi
 
 # Check if data_server.py exists
@@ -46,4 +48,4 @@ echo "Press Ctrl+C to stop"
 echo ""
 
 cd "$SCRIPT_DIR"
-python data_server.py
+"$PYTHON" data_server.py
