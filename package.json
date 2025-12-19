@@ -3,6 +3,18 @@
   "version": "1.0.0",
   "description": "AI training system for Gravitation³ physics simulators",
   "main": "index.js",
+  "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/richer-richard/gravitation3.git"
+  },
+  "bugs": {
+    "url": "https://github.com/richer-richard/gravitation3/issues"
+  },
+  "homepage": "https://github.com/richer-richard/gravitation3#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "generate-data": "node scripts/generate_training_data.js",
     "train": "node scripts/train_classifier.js",
