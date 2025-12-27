@@ -471,5 +471,6 @@ class LorenzApp {
 // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new LorenzApp();
+    window.simulator = window.app.simulator; // Expose for AI chatbot + data sender
     console.log('Gravitation³ - Lorenz Attractor Simulator initialized');
 });

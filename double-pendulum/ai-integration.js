@@ -5,6 +5,9 @@
 
 class DoublePendulumAI {
     constructor() {
+        const runtimeConfig = (typeof window !== 'undefined' && window.GRAVITATION3_CONFIG) ? window.GRAVITATION3_CONFIG : {};
+        this.modelBaseUrl = runtimeConfig.modelBaseUrl || 'http://localhost:5003';
+
         this.model = null;
         this.isLoading = false;
         this.isLoaded = false;
@@ -27,7 +30,7 @@ class DoublePendulumAI {
             console.log('Connecting to AI Model Server...');
             
             // Check if API is available
-            const response = await fetch('http://localhost:5003/health');
+            const response = await fetch(`${this.modelBaseUrl}/health`);
             
             if (response.ok) {
                 const data = await response.json();
@@ -41,7 +44,11 @@ class DoublePendulumAI {
                     // Start periodic predictions
                     this.startPredictions();
                 } else {
-                    throw new Error('Double Pendulum model not loaded on server');
+                    this.isLoaded = false;
+                    this.isLoading = false;
+                    this.updateStatus('unavailable', 'Model Unavailable');
+                    console.warn('⚠️ Double Pendulum model is not loaded on the server');
+                    return;
                 }
             } else {
                 throw new Error('API server not responding');
@@ -70,6 +77,8 @@ class DoublePendulumAI {
      * Update the AI status indicator
      */
     updateStatus(state, text) {
+        if (!this.statusElement || !this.statusTextElement) return;
+
         this.statusTextElement.textContent = text;
         
         // Remove all state classes
@@ -82,10 +91,14 @@ class DoublePendulumAI {
             this.statusTextElement.textContent = 'Model Online';
         } else if (state === 'active') {
             this.statusElement.classList.add('connected', 'active');
-            this.canvasContainer.classList.add('ai-active');
+            if (this.canvasContainer) {
+                this.canvasContainer.classList.add('ai-active');
+            }
             this.statusTextElement.textContent = 'Predicting';
         } else if (state === 'error') {
             this.statusTextElement.textContent = 'Server Offline';
+        } else if (state === 'unavailable') {
+            this.statusTextElement.textContent = 'Model Unavailable';
         }
     }
 
@@ -109,7 +122,9 @@ class DoublePendulumAI {
             clearInterval(this.predictionInterval);
             this.predictionInterval = null;
         }
-        this.canvasContainer.classList.remove('ai-active');
+        if (this.canvasContainer) {
+            this.canvasContainer.classList.remove('ai-active');
+        }
         if (this.isLoaded) {
             this.updateStatus('connected', 'Model Ready');
         }
@@ -145,7 +160,7 @@ class DoublePendulumAI {
             };
             
             // Call API silently in background
-            const response = await fetch('http://localhost:5003/api/double-pendulum/predict', {
+            const response = await fetch(`${this.modelBaseUrl}/api/double-pendulum/predict`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

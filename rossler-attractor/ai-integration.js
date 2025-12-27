@@ -5,6 +5,9 @@
 
 class RosslerAI {
     constructor() {
+        const runtimeConfig = (typeof window !== 'undefined' && window.GRAVITATION3_CONFIG) ? window.GRAVITATION3_CONFIG : {};
+        this.modelBaseUrl = runtimeConfig.modelBaseUrl || 'http://localhost:5003';
+
         this.model = null;
         this.isLoading = false;
         this.isLoaded = false;
@@ -29,7 +32,7 @@ class RosslerAI {
             console.log('Connecting to AI Model Server...');
             
             // Check if API is available
-            const response = await fetch('http://localhost:5001/api/health');
+            const response = await fetch(`${this.modelBaseUrl}/health`);
             
             if (response.ok) {
                 const data = await response.json();
@@ -43,7 +46,11 @@ class RosslerAI {
                     // Start periodic predictions
                     this.startPredictions();
                 } else {
-                    throw new Error('Rossler Attractor model not loaded on server');
+                    this.isLoaded = false;
+                    this.isLoading = false;
+                    this.updateStatus('unavailable', 'Model Unavailable');
+                    console.warn('⚠️ Rossler Attractor model is not loaded on the server');
+                    return;
                 }
             } else {
                 throw new Error('API server not responding');
@@ -81,7 +88,6 @@ class RosslerAI {
         }
         
         this.dataSender = new DataSender({
-            endpoint: 'http://localhost:5678/api/data/submit',
             simulationName: 'Rossler Attractor',
             sendInterval: 100,
             enabled: false // Disabled by default
@@ -206,11 +212,12 @@ class RosslerAI {
                 z: state.z || 0,
                 a: simulator.a || 0.2,
                 b: simulator.b || 0.2,
-                c: simulator.c || 5.7
+                c: simulator.c || 5.7,
+                time: simulator.time || 0
             };
             
             // Call API silently in background
-            const response = await fetch('http://localhost:5001/api/rossler/predict', {
+            const response = await fetch(`${this.modelBaseUrl}/api/rossler/predict`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

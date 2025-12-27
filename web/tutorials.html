@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="nav.css">
     <script defer src="../shared/browser-support.js"></script>
+    <script defer src="../shared/site-nav.js"></script>
     
     <!-- MathJax Configuration -->
     <script>
@@ -6252,15 +6253,6 @@
             });
         });
 
-        // Mobile menu toggle
-        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
-        const navRight = document.querySelector('.nav-right .nav-links');
-
-        if (mobileMenuToggle) {
-            mobileMenuToggle.addEventListener('click', () => {
-                navRight.classList.toggle('active');
-            });
-        }
     </script>
 </body>
 </html>

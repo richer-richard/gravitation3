@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="nav.css">
     <script defer src="../shared/browser-support.js"></script>
+    <script defer src="../shared/site-nav.js"></script>
     <style>
         body {
             margin: 0;
@@ -449,18 +450,6 @@
     </div>
 
     <script>
-        // Mobile menu toggle
-        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
-        const navLinksLeft = document.querySelector('.nav-left .nav-links');
-        const navLinksRight = document.querySelector('.nav-right .nav-links');
-
-        if (mobileMenuToggle) {
-            mobileMenuToggle.addEventListener('click', () => {
-                navLinksLeft.classList.toggle('active');
-                navLinksRight.classList.toggle('active');
-            });
-        }
-
         // Scroll-triggered animations
         const observerOptions = {
             root: null,

@@ -5,6 +5,9 @@
 
 class LorenzAI {
     constructor() {
+        const runtimeConfig = (typeof window !== 'undefined' && window.GRAVITATION3_CONFIG) ? window.GRAVITATION3_CONFIG : {};
+        this.modelBaseUrl = runtimeConfig.modelBaseUrl || 'http://localhost:5003';
+
         this.model = null;
         this.isLoading = false;
         this.isLoaded = false;
@@ -29,7 +32,7 @@ class LorenzAI {
             console.log('Connecting to AI Model Server...');
             
             // Check if API is available
-            const response = await fetch('http://localhost:5003/health');
+            const response = await fetch(`${this.modelBaseUrl}/health`);
             
             if (response.ok) {
                 const data = await response.json();
@@ -43,7 +46,11 @@ class LorenzAI {
                     // Don't auto-start predictions to avoid constant polling errors
                     // Users can manually request predictions if needed
                 } else {
-                    throw new Error('Lorenz Attractor model not loaded on server');
+                    this.isLoaded = false;
+                    this.isLoading = false;
+                    this.updateStatus('unavailable', 'Model Unavailable');
+                    console.warn('⚠️ Lorenz Attractor model is not loaded on the server');
+                    return;
                 }
             } else {
                 throw new Error('API server not responding');
@@ -81,7 +88,6 @@ class LorenzAI {
         }
         
         this.dataSender = new DataSender({
-            endpoint: 'http://localhost:5678/api/data/submit',
             simulationName: 'Lorenz Attractor',
             sendInterval: 100,
             enabled: false // Disabled by default
@@ -206,11 +212,12 @@ class LorenzAI {
                 z: state.z || 0,
                 sigma: simulator.sigma || 10,
                 rho: simulator.rho || 28,
-                beta: simulator.beta || 8/3
+                beta: simulator.beta || 8/3,
+                time: simulator.time || 0
             };
             
             // Call API silently in background
-            const response = await fetch('http://localhost:5003/api/lorenz/predict', {
+            const response = await fetch(`${this.modelBaseUrl}/api/lorenz/predict`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="nav.css">
     <script defer src="../shared/browser-support.js"></script>
+    <script defer src="../shared/site-nav.js"></script>
     <style>
         .ai-content {
             max-width: 900px;
@@ -795,7 +796,7 @@ cd api
             <div class="setup-config-section code-block">
 Environment Variables:
 - OPENAI_API_KEY: Your GPT-5 API key
-- DATA_SERVER_URL: http://localhost:5678
+- DATA_SERVER_URL: http://localhost:5002
 - LLM_SERVER_PORT: 5002
 - OPENAI_MODEL: gpt-5 (with vision and tools)
 
@@ -1084,16 +1085,6 @@ pip install -r scripts/python_training/requirements.txt
 
     <script src="music-player.js"></script>
     <script>
-        // Mobile menu toggle
-        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
-        const navLinksLeft = document.querySelector('.nav-left .nav-links');
-        const navLinksRight = document.querySelector('.nav-right .nav-links');
-
-        mobileMenuToggle.addEventListener('click', () => {
-            navLinksLeft.classList.toggle('active');
-            navLinksRight.classList.toggle('active');
-        });
-
         // Smooth scroll functionality for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(link => {
             link.addEventListener('click', (e) => {

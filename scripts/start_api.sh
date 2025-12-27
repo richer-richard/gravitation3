@@ -1,33 +1,24 @@
 #!/bin/bash
-# Start AI Prediction API Server
+set -euo pipefail
 
 echo "=========================================="
-echo "Physics Simulation AI Prediction API"
+echo "Gravitation³ Backend Launcher"
 echo "=========================================="
 echo ""
 
-# Check if virtual environment exists
-if [ ! -d "venv" ]; then
-    echo "Error: Virtual environment not found!"
-    echo "Please run: python -m venv venv"
-    exit 1
-fi
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
-# Activate virtual environment
-source venv/bin/activate
-
-# Check if dependencies are installed
-echo "Checking dependencies..."
-if ! python -c "import flask" 2>/dev/null; then
-    echo "Installing dependencies..."
-    pip install -r scripts/api_requirements.txt
-fi
-
+echo "Starting backend servers (no browser)..."
+echo "  - LLM Chatbot Server: http://localhost:5001"
+echo "  - Data Collection Server: http://localhost:5002"
+echo "  - AI Model Server: http://localhost:5003"
 echo ""
-echo "Starting API server..."
-echo "Server will be available at: http://localhost:5000"
-echo "Press Ctrl+C to stop"
+echo "Press Ctrl+C to stop."
 echo ""
 
-# Run the server
-python scripts/api_server.py
+if [ -x "$PROJECT_DIR/app.py" ]; then
+    "$PROJECT_DIR/app.py" --no-browser
+else
+    python3 "$PROJECT_DIR/app.py" --no-browser
+fi

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="../web/nav.css">
     <link rel="stylesheet" href="../shared/ai-chatbot.css">
     <script defer src="../shared/browser-support.js"></script>
+    <script defer src="../shared/site-nav.js"></script>
     <style>
         body {
             margin: 0;
@@ -524,23 +525,16 @@
     <script src="app.js"></script>
     <script src="../web/music-player.js"></script>
     <script>
-        // Mobile menu toggle
-        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
-        const navLinks = document.querySelector('.nav-links');
-
-        if (mobileMenuToggle) {
-            mobileMenuToggle.addEventListener('click', () => {
-                navLinks.classList.toggle('active');
-            });
-        }
-    </script>
-    <script>
-        if (window.AIChat) {
-            window.AIChat.configure({
-                simulationName: 'Double-Gyre',
-                dataSource: window.simulator || null
-            });
-        }
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                if (window.AIChat && window.simulator) {
+                    window.AIChat.configure({
+                        simulationName: 'Double-Gyre',
+                        dataSource: window.simulator
+                    });
+                }
+            }, 500);
+        });
     </script>
 </body>
 </html>

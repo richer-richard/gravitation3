@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="../web/nav.css">
     <link rel="stylesheet" href="../shared/ai-chatbot.css">
     <script defer src="../shared/browser-support.js"></script>
+    <script defer src="../shared/site-nav.js"></script>
     <style>
         @font-face {
             font-family: 'Neue Montreal';
@@ -421,13 +422,17 @@
     <script src="ai-integration.js"></script>
     <script src="../web/music-player.js"></script>
     <script>
-        // Configure AI Chatbot for Double Pendulum
-        if (window.AIChat) {
-            window.AIChat.configure({
-                simulationName: 'Double-Pendulum',
-                dataSource: window.simulator || null
-            });
-        }
+        // Configure AI chatbot when simulator is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                if (window.AIChat && window.simulator) {
+                    window.AIChat.configure({
+                        simulationName: 'Double-Pendulum',
+                        dataSource: window.simulator
+                    });
+                }
+            }, 200);
+        });
     </script>
 </body>
 </html>

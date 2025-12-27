@@ -5,24 +5,43 @@
 
 class ServerHelper {
     constructor() {
+        const storedConfig = (() => {
+            if (typeof window === 'undefined' || !window.localStorage) return {};
+            try {
+                const raw = window.localStorage.getItem('gravitation3_config');
+                const parsed = raw ? JSON.parse(raw) : {};
+                return parsed && typeof parsed === 'object' ? parsed : {};
+            } catch {
+                return {};
+            }
+        })();
+
+        const runtimeConfig = {
+            ...storedConfig,
+            ...((typeof window !== 'undefined' && window.GRAVITATION3_CONFIG) ? window.GRAVITATION3_CONFIG : {})
+        };
+        const llmBaseUrl = runtimeConfig.llmBaseUrl || 'http://localhost:5001';
+        const dataBaseUrl = runtimeConfig.dataBaseUrl || 'http://localhost:5002';
+        const modelBaseUrl = runtimeConfig.modelBaseUrl || 'http://localhost:5003';
+
         this.servers = {
             llm: {
                 name: 'LLM Chatbot Server',
-                url: 'http://localhost:5001/api/health',
+                url: runtimeConfig.llmHealthEndpoint || `${llmBaseUrl}/api/health`,
                 port: 5001,
                 status: 'unknown',
                 required: true
             },
             data: {
                 name: 'Data Collection Server',
-                url: 'http://localhost:5002/api/health',
+                url: runtimeConfig.dataHealthEndpoint || `${dataBaseUrl}/api/health`,
                 port: 5002,
                 status: 'unknown',
                 required: false
             },
             model: {
                 name: 'AI Model Server',
-                url: 'http://localhost:5003/api/health',
+                url: runtimeConfig.modelHealthEndpoint || `${modelBaseUrl}/api/health`,
                 port: 5003,
                 status: 'unknown',
                 required: false
@@ -60,20 +79,18 @@ class ServerHelper {
      * Check if all servers are running
      */
     async checkServers() {
-        const results = await Promise.all([
-            this.checkServer('data'),
-            this.checkServer('llm')
-        ]);
-        
-        const allRunning = results.every(r => r);
-        
-        if (!allRunning && !this.notificationShown) {
+        await Promise.all(Object.keys(this.servers).map(key => this.checkServer(key)));
+
+        const requiredServers = Object.values(this.servers).filter(server => server.required);
+        const requiredRunning = requiredServers.every(server => server.status === 'running');
+
+        if (!requiredRunning && !this.notificationShown) {
             this.showSetupNotification();
-        } else if (allRunning && this.notificationShown) {
+        } else if (requiredRunning && this.notificationShown) {
             this.hideSetupNotification();
         }
-        
-        return allRunning;
+
+        return requiredRunning;
     }
     
     /**
@@ -120,8 +137,8 @@ class ServerHelper {
                     <button class="notification-close" onclick="document.getElementById('server-setup-notification').remove()">×</button>
                 </div>
                 <p class="notification-message">
-                    The AI chatbot requires backend servers to be running. 
-                    ${offlineServers.length === 2 ? 'Both servers are' : 'At least one server is'} currently offline.
+                    The AI assistant works best with the backend services running.
+                    ${offlineServers.length === 1 ? 'One server is' : `${offlineServers.length} servers are`} currently offline.
                     <br><br>
                     <strong>Note:</strong> For security reasons, you need to manually start these servers in your terminal before using the AI features.
                 </p>
@@ -200,7 +217,7 @@ class ServerHelper {
                 left: 50%;
                 transform: translate(-50%, -50%);
                 width: 550px;
-                max-width: calc(100vw - 800px);
+                max-width: calc(100vw - 40px);
                 background: rgba(26, 31, 58, 0.98);
                 backdrop-filter: blur(20px);
                 border: 2px solid rgba(249, 115, 22, 0.5);

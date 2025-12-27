@@ -5,8 +5,25 @@
 
 class DataSender {
     constructor(config = {}) {
+        const storedConfig = (() => {
+            if (typeof window === 'undefined' || !window.localStorage) return {};
+            try {
+                const raw = window.localStorage.getItem('gravitation3_config');
+                const parsed = raw ? JSON.parse(raw) : {};
+                return parsed && typeof parsed === 'object' ? parsed : {};
+            } catch {
+                return {};
+            }
+        })();
+
+        const runtimeConfig = {
+            ...storedConfig,
+            ...((typeof window !== 'undefined' && window.GRAVITATION3_CONFIG) ? window.GRAVITATION3_CONFIG : {})
+        };
+        const defaultEndpoint = runtimeConfig.dataEndpoint || 'http://localhost:5002/api/data/submit';
+
         this.config = {
-            endpoint: 'http://localhost:5002/api/data/submit',
+            endpoint: defaultEndpoint,
             simulationId: null,
             simulationName: 'Simulation',
             sendInterval: 100, // Send data every 100ms
@@ -19,6 +36,10 @@ class DataSender {
         this.lastSendTime = 0;
         this.sendCount = 0;
         this.errorCount = 0;
+
+        this.consecutiveErrors = 0;
+        this.backoffUntil = 0;
+        this.maxBackoffMs = 5000;
     }
     
     /**
@@ -84,6 +105,11 @@ class DataSender {
             console.warn('📡 No data source configured');
             return;
         }
+
+        const now = Date.now();
+        if (this.backoffUntil && now < this.backoffUntil) {
+            return;
+        }
         
         try {
             const data = this.extractData();
@@ -105,22 +131,31 @@ class DataSender {
             if (response.ok) {
                 this.sendCount++;
                 this.lastSendTime = Date.now();
+                this.consecutiveErrors = 0;
+                this.backoffUntil = 0;
                 
                 // Log every 100 sends
                 if (this.sendCount % 100 === 0) {
                     console.log(`📡 Sent ${this.sendCount} data points`);
                 }
             } else {
-                this.errorCount++;
-                if (this.errorCount % 10 === 0) {
-                    console.error(`📡 Send error (${this.errorCount} total):`, response.status);
-                }
+                this.registerSendError(`HTTP ${response.status}`);
             }
         } catch (error) {
-            this.errorCount++;
-            if (this.errorCount % 10 === 0) {
-                console.error(`📡 Send error (${this.errorCount} total):`, error.message);
-            }
+            this.registerSendError(error?.message || 'Unknown error');
+        }
+    }
+
+    registerSendError(message) {
+        this.errorCount++;
+        this.consecutiveErrors++;
+
+        const exponent = Math.min(this.consecutiveErrors - 1, 6);
+        const backoffMs = Math.min(250 * (2 ** exponent), this.maxBackoffMs);
+        this.backoffUntil = Date.now() + backoffMs;
+
+        if (this.errorCount === 1 || this.errorCount % 25 === 0) {
+            console.error(`📡 Send error (${this.errorCount} total, backoff ${backoffMs}ms):`, message);
         }
     }
     

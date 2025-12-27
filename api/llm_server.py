@@ -8,6 +8,8 @@ import os
 import json
 import base64
 import requests
+import re
+import unicodedata
 from datetime import datetime
 from contextlib import closing
 from io import BytesIO
@@ -86,6 +88,34 @@ Explain turbulence, vortex shedding, mixing, and energy cascade from large to sm
     "default": """You are an AI assistant for Gravitation³, an interactive physics simulation platform.
 You have access to real-time simulation data. Explain physics concepts clearly, identify patterns,
 suggest interesting parameter values, and help users understand complex dynamical systems."""
+}
+
+def normalize_simulation_name(value: str) -> str:
+    if not value:
+        return 'default'
+    text = str(value).strip()
+    text = unicodedata.normalize('NFKD', text)
+    text = text.encode('ascii', 'ignore').decode('ascii')
+    text = text.lower()
+    text = re.sub(r'[^a-z0-9]+', '-', text).strip('-')
+    return text or 'default'
+
+
+SIMULATION_PROMPT_LOOKUP = {
+    normalize_simulation_name(key): prompt
+    for key, prompt in SIMULATION_PROMPTS.items()
+}
+
+# Common aliases (normalized) → canonical prompt key (normalized)
+SIMULATION_PROMPT_ALIASES = {
+    'three-body-problem': 'three-body',
+    'threebody': 'three-body',
+    'lorenz': 'lorenz-attractor',
+    'rossler': 'rossler-attractor',
+    'roessler-attractor': 'rossler-attractor',
+    'roessler': 'rossler-attractor',
+    'doublegyre': 'double-gyre',
+    'malkus': 'malkus-waterwheel',
 }
 
 
@@ -624,7 +654,9 @@ def fetch_live_data(simulation_id):
 
 def get_system_prompt(simulation_name, simulation_data, historical_stats=None):
     """Generate system prompt with current simulation context"""
-    base_prompt = SIMULATION_PROMPTS.get(simulation_name, SIMULATION_PROMPTS["default"])
+    normalized_name = normalize_simulation_name(simulation_name)
+    normalized_name = SIMULATION_PROMPT_ALIASES.get(normalized_name, normalized_name)
+    base_prompt = SIMULATION_PROMPT_LOOKUP.get(normalized_name, SIMULATION_PROMPTS["default"])
     
     def fmt(value, digits=4, default='n/a'):
         try:

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="nav.css">
     <script defer src="../shared/browser-support.js"></script>
+    <script defer src="../shared/site-nav.js"></script>
     <style>
         body {
             margin: 0;
@@ -497,9 +498,9 @@ python train_all_simulations.py<br>
                     <div style="background: rgba(0, 0, 0, 0.3); padding: 1rem; border-radius: var(--radius-sm); font-family: monospace; font-size: 0.9rem; color: #4ade80; overflow-x: auto; margin-bottom: 1rem;">
 # AI & Data Server Configuration<br>
 OPENAI_API_KEY=sk-proj-... (for GPT-5)<br>
-DATA_SERVER_URL=http://localhost:5678<br>
-LLM_SERVER_PORT=5002<br>
-OPENAI_MODEL=gpt-5<br>
+DATA_SERVER_URL=http://localhost:5002<br>
+LLM_SERVER_PORT=5001<br>
+OPENAI_MODEL=gpt-5.1<br>
 <br>
 # Optional<br>
 PYTHON_ENV=venv/bin/python3<br>
@@ -544,19 +545,6 @@ GPU_ENABLED=true (for GPU training)
         </div>
     </div>
 
-    <script>
-        // Mobile menu toggle
-        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
-        const navLinksLeft = document.querySelector('.nav-left .nav-links');
-        const navLinksRight = document.querySelector('.nav-right .nav-links');
-
-        if (mobileMenuToggle) {
-            mobileMenuToggle.addEventListener('click', () => {
-                navLinksLeft.classList.toggle('active');
-                navLinksRight.classList.toggle('active');
-            });
-        }
-    </script>
     <!-- Background Music -->
     <audio id="bg-music" loop>
         <source src="music/joan of arc. - barnes blvd.flac" type="audio/flac">

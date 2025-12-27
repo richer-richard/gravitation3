@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../shared/mobile-responsive.css">
     <link rel="stylesheet" href="../shared/ai-chatbot.css">
     <script defer src="../shared/browser-support.js"></script>
+    <script defer src="../shared/site-nav.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
@@ -379,7 +380,6 @@
     <script src="../shared/error-handler.js"></script>
     <script src="../shared/server-helper.js"></script>
     <script src="../shared/data-sender.js"></script>
-    <link rel="stylesheet" href="../shared/ai-chatbot.css">
     <script src="../shared/ai-chatbot.js"></script>
     <script src="../shared/keyboard-shortcuts.js"></script>
     <script src="simulator.js"></script>
@@ -388,16 +388,6 @@
     <script src="ai-integration.js"></script>
     <script src="../web/music-player.js"></script>
     <script>
-        // Mobile menu toggle
-        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
-        const navLinks = document.querySelector('.nav-links');
-
-        if (mobileMenuToggle) {
-            mobileMenuToggle.addEventListener('click', () => {
-                navLinks.classList.toggle('active');
-            });
-        }
-        
         // Configure AI Chatbot
         window.addEventListener('load', () => {
             // Configure AI Chatbot immediately

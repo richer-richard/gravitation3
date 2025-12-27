@@ -10,6 +10,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 import numpy as np
 import logging
+from pathlib import Path
 
 # Custom Transformer Block Layer
 class TransformerBlock(layers.Layer):
@@ -30,6 +31,14 @@ class TransformerBlock(layers.Layer):
         self.layernorm2 = layers.LayerNormalization(epsilon=1e-6)
         self.dropout1 = layers.Dropout(dropout_rate)
         self.dropout2 = layers.Dropout(dropout_rate)
+
+    def build(self, input_shape):
+        # MultiHeadAttention.build expects both query and value shapes.
+        self.att.build(input_shape, input_shape)
+        self.ffn.build(input_shape)
+        self.layernorm1.build(input_shape)
+        self.layernorm2.build(input_shape)
+        super().build(input_shape)
 
     def call(self, inputs, training=False):
         attn_output = self.att(inputs, inputs)
@@ -67,11 +76,20 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 CORS(app)  # Enable CORS for browser requests
 
+# Resolve paths relative to this file for robust launches
+API_DIR = Path(__file__).parent.resolve()
+PROJECT_DIR = API_DIR.parent
+AI_MODELS_DIR = PROJECT_DIR / "ai_models"
+
 # Global model storage
 models = {
     'three_body': None,
     'double_pendulum': None,
     'lorenz_attractor': None
+    ,
+    'rossler_attractor': None,
+    'double_gyre': None,
+    'malkus_waterwheel': None
 }
 
 def load_models():
@@ -82,41 +100,42 @@ def load_models():
         'r2_metric': r2_metric
     }
     
-    try:
-        logger.info("Loading Three-Body model...")
-        models['three_body'] = tf.keras.models.load_model(
-            '../ai_models/three-body/three_body_final_20251111_071642.keras',
-            custom_objects=custom_objects,
-            compile=False,
-            safe_mode=False
-        )
-        logger.info("✓ Three-Body model loaded successfully")
-    except Exception as e:
-        logger.error(f"✗ Failed to load Three-Body model: {e}")
-    
-    try:
-        logger.info("Loading Double Pendulum model...")
-        models['double_pendulum'] = tf.keras.models.load_model(
-            '../ai_models/double-pendulum/double_pendulum_predictor_best_20251112_162121.keras',
-            custom_objects=custom_objects,
-            compile=False,
-            safe_mode=False
-        )
-        logger.info("✓ Double Pendulum model loaded successfully")
-    except Exception as e:
-        logger.error(f"✗ Failed to load Double Pendulum model: {e}")
-    
-    try:
-        logger.info("Loading Lorenz Attractor model...")
-        models['lorenz_attractor'] = tf.keras.models.load_model(
-            '../ai_models/lorenz-attractor/lorenz_final_20251123_000431.keras',
-            custom_objects=custom_objects,
-            compile=False,
-            safe_mode=False
-        )
-        logger.info("✓ Lorenz Attractor model loaded successfully")
-    except Exception as e:
-        logger.error(f"✗ Failed to load Lorenz Attractor model: {e}")
+    model_specs = [
+        ('three_body', AI_MODELS_DIR / 'three-body' / 'three_body_final_20251111_071642.keras', "Three-Body"),
+        ('double_pendulum', AI_MODELS_DIR / 'double-pendulum' / 'double_pendulum_predictor_best_20251112_162121.keras', "Double Pendulum"),
+        ('lorenz_attractor', AI_MODELS_DIR / 'lorenz-attractor' / 'lorenz_final_20251123_000431.keras', "Lorenz Attractor"),
+        ('rossler_attractor', AI_MODELS_DIR / 'rossler-attractor' / 'rossler_final_20251123_114133.keras', "Rössler Attractor"),
+        ('double_gyre', AI_MODELS_DIR / 'double-gyre' / 'double_gyre_final_20251123_190033.keras', "Double Gyre"),
+        ('malkus_waterwheel', AI_MODELS_DIR / 'malkus-waterwheel' / 'malkus_final_20251123_194848.keras', "Malkus Waterwheel"),
+    ]
+
+    for key, path, label in model_specs:
+        try:
+            if not path.exists():
+                logger.warning(f"⏭ {label} model file not found: {path}")
+                models[key] = None
+                continue
+
+            logger.info(f"Loading {label} model from {path} ...")
+            models[key] = tf.keras.models.load_model(
+                str(path),
+                custom_objects=custom_objects,
+                compile=False,
+                safe_mode=False
+            )
+            logger.info(f"✓ {label} model loaded successfully (input={models[key].input_shape}, output={models[key].output_shape})")
+        except Exception as e:
+            logger.error(f"✗ Failed to load {label} model: {e}")
+            models[key] = None
+
+
+@app.route('/api/status', methods=['GET'])
+def api_status():
+    """Compatibility status endpoint for browser helpers."""
+    return jsonify({
+        'ready': True,
+        'models': {k: v is not None for k, v in models.items()}
+    })
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -126,7 +145,10 @@ def health_check():
         'models': {
             'three_body': models['three_body'] is not None,
             'double_pendulum': models['double_pendulum'] is not None,
-            'lorenz_attractor': models['lorenz_attractor'] is not None
+            'lorenz_attractor': models['lorenz_attractor'] is not None,
+            'rossler_attractor': models['rossler_attractor'] is not None,
+            'double_gyre': models['double_gyre'] is not None,
+            'malkus_waterwheel': models['malkus_waterwheel'] is not None
         }
     })
 
@@ -138,7 +160,7 @@ def predict_three_body():
             return jsonify({'error': 'Model not loaded'}), 503
         
         # Get input data
-        data = request.json
+        data = request.get_json(silent=True) or {}
         positions = data.get('positions', [])
         velocities = data.get('velocities', [])
         
@@ -160,9 +182,29 @@ def predict_three_body():
         while len(input_data) < 18:
             input_data.append(0)
         
-        # Make prediction
-        input_tensor = np.array([input_data], dtype=np.float32)
-        prediction = models['three_body'].predict(input_tensor, verbose=0)
+        model = models['three_body']
+
+        seq_len = int(model.input_shape[1] or 50)
+        feature_dim = int(model.input_shape[2] or 18)
+
+        # Build a sequence input (seq_len, feature_dim)
+        provided_sequence = data.get('sequence')
+        if isinstance(provided_sequence, list) and provided_sequence:
+            seq = np.array(provided_sequence, dtype=np.float32)
+            if seq.ndim != 2 or seq.shape[1] != feature_dim:
+                return jsonify({'error': f'Invalid sequence shape; expected (*, {feature_dim})'}), 400
+            if seq.shape[0] >= seq_len:
+                seq = seq[-seq_len:]
+            else:
+                # Left-pad by repeating first row
+                pad = np.repeat(seq[:1], seq_len - seq.shape[0], axis=0)
+                seq = np.concatenate([pad, seq], axis=0)
+        else:
+            state = np.array(input_data[:feature_dim], dtype=np.float32)
+            seq = np.tile(state, (seq_len, 1))
+
+        input_tensor = np.expand_dims(seq, axis=0)  # (1, seq_len, feature_dim)
+        prediction = model.predict(input_tensor, verbose=0)
         
         return jsonify({
             'prediction': prediction.tolist()[0],
@@ -181,7 +223,7 @@ def predict_double_pendulum():
             return jsonify({'error': 'Model not loaded'}), 503
         
         # Get input data
-        data = request.json
+        data = request.get_json(silent=True) or {}
         theta1 = data.get('theta1', 0)
         theta2 = data.get('theta2', 0)
         omega1 = data.get('omega1', 0)
@@ -215,30 +257,153 @@ def predict_lorenz():
             return jsonify({'error': 'Model not loaded'}), 503
         
         # Get input data
-        data = request.json
+        data = request.get_json(silent=True) or {}
         x = data.get('x', 0)
         y = data.get('y', 0)
         z = data.get('z', 0)
         sigma = data.get('sigma', 10)
         rho = data.get('rho', 28)
         beta = data.get('beta', 8/3)
+        t = data.get('time', 0)
         
-        # Prepare input as a single state
-        state = np.array([x, y, z, sigma, rho, beta], dtype=np.float32)
-        
-        # The Lorenz model expects 3D input: (batch, sequence_length=50, features=6)
-        # Create a sequence by repeating the state 50 times
-        sequence = np.tile(state, (50, 1))  # Shape: (50, 6)
-        input_data = np.expand_dims(sequence, axis=0)  # Shape: (1, 50, 6)
-        
-        # Make prediction
-        prediction = models['lorenz_attractor'].predict(input_data, verbose=0)
+        model = models['lorenz_attractor']
+        seq_len = int(model.input_shape[1] or 50)
+        feature_dim = int(model.input_shape[2] or 7)
+
+        # Prepare input as a single feature vector
+        state = np.array([x, y, z, sigma, rho, beta, t], dtype=np.float32)
+        state = state[:feature_dim]
+        sequence = np.tile(state, (seq_len, 1))
+        input_data = np.expand_dims(sequence, axis=0)  # (1, seq_len, feature_dim)
+
+        prediction = model.predict(input_data, verbose=0)
         
         return jsonify({
             'prediction': prediction.tolist()[0],
             'shape': prediction.shape
         })
         
+    except Exception as e:
+        logger.error(f"Prediction error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/rossler/predict', methods=['POST'])
+def predict_rossler():
+    """Predict next states for Rössler attractor"""
+    try:
+        if models['rossler_attractor'] is None:
+            return jsonify({'error': 'Model not loaded'}), 503
+
+        data = request.get_json(silent=True) or {}
+        x = data.get('x', 0)
+        y = data.get('y', 0)
+        z = data.get('z', 0)
+        a = data.get('a', 0.2)
+        b = data.get('b', 0.2)
+        c = data.get('c', 5.7)
+        t = data.get('time', 0)
+
+        model = models['rossler_attractor']
+        seq_len = int(model.input_shape[1] or 50)
+        feature_dim = int(model.input_shape[2] or 7)
+
+        state = np.array([x, y, z, a, b, c, t], dtype=np.float32)
+        state = state[:feature_dim]
+        sequence = np.tile(state, (seq_len, 1))
+        input_data = np.expand_dims(sequence, axis=0)
+
+        prediction = model.predict(input_data, verbose=0)
+
+        return jsonify({
+            'prediction': prediction.tolist()[0],
+            'shape': prediction.shape
+        })
+
+    except Exception as e:
+        logger.error(f"Prediction error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/double-gyre/predict', methods=['POST'])
+def predict_double_gyre():
+    """Predict next states for Double Gyre flow (single particle)."""
+    try:
+        if models['double_gyre'] is None:
+            return jsonify({'error': 'Model not loaded'}), 503
+
+        data = request.get_json(silent=True) or {}
+        x = data.get('x', 0)
+        y = data.get('y', 0)
+        A = data.get('A', 0.1)
+        epsilon = data.get('epsilon', 0.25)
+        omega = data.get('omega', 0.5)
+        t = data.get('time', 0)
+
+        model = models['double_gyre']
+        seq_len = int(model.input_shape[1] or 50)
+        feature_dim = int(model.input_shape[2] or 6)
+
+        state = np.array([x, y, A, epsilon, omega, t], dtype=np.float32)
+        state = state[:feature_dim]
+        sequence = np.tile(state, (seq_len, 1))
+        input_data = np.expand_dims(sequence, axis=0)
+
+        prediction = model.predict(input_data, verbose=0)
+
+        return jsonify({
+            'prediction': prediction.tolist()[0],
+            'shape': prediction.shape
+        })
+
+    except Exception as e:
+        logger.error(f"Prediction error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/malkus-waterwheel/predict', methods=['POST'])
+def predict_malkus_waterwheel():
+    """Predict next states for the Malkus waterwheel (omega/theta)."""
+    try:
+        if models['malkus_waterwheel'] is None:
+            return jsonify({'error': 'Model not loaded'}), 503
+
+        data = request.get_json(silent=True) or {}
+        omega = data.get('omega', data.get('angularVelocity', 0))
+        theta = data.get('theta', 0)
+
+        bucket_mass_sum = data.get('bucket_mass_sum')
+        if bucket_mass_sum is None:
+            masses = data.get('bucketMasses') or data.get('bucket_masses') or data.get('masses')
+            if isinstance(masses, list):
+                try:
+                    bucket_mass_sum = float(sum(float(m) for m in masses))
+                except Exception:
+                    bucket_mass_sum = 0
+            else:
+                bucket_mass_sum = 0
+
+        Q = data.get('Q', data.get('inflow', 2.5))
+        K = data.get('K', data.get('leakRate', 0.1))
+        nu = data.get('nu', data.get('damping', 1.0))
+        t = data.get('time', 0)
+
+        model = models['malkus_waterwheel']
+        seq_len = int(model.input_shape[1] or 30)
+        feature_dim = int(model.input_shape[2] or 7)
+
+        state = np.array([omega, theta, bucket_mass_sum, Q, K, nu, t], dtype=np.float32)
+        state = state[:feature_dim]
+        sequence = np.tile(state, (seq_len, 1))
+        input_data = np.expand_dims(sequence, axis=0)
+
+        prediction = model.predict(input_data, verbose=0)
+
+        return jsonify({
+            'prediction': prediction.tolist()[0],
+            'shape': prediction.shape
+        })
+
     except Exception as e:
         logger.error(f"Prediction error: {e}")
         return jsonify({'error': str(e)}), 500
@@ -269,6 +434,50 @@ def models_info():
         }
     else:
         info['double_pendulum'] = {'loaded': False}
+
+    if models['lorenz_attractor']:
+        model = models['lorenz_attractor']
+        info['lorenz_attractor'] = {
+            'loaded': True,
+            'input_shape': str(model.input_shape),
+            'output_shape': str(model.output_shape),
+            'parameters': model.count_params()
+        }
+    else:
+        info['lorenz_attractor'] = {'loaded': False}
+
+    if models['rossler_attractor']:
+        model = models['rossler_attractor']
+        info['rossler_attractor'] = {
+            'loaded': True,
+            'input_shape': str(model.input_shape),
+            'output_shape': str(model.output_shape),
+            'parameters': model.count_params()
+        }
+    else:
+        info['rossler_attractor'] = {'loaded': False}
+
+    if models['double_gyre']:
+        model = models['double_gyre']
+        info['double_gyre'] = {
+            'loaded': True,
+            'input_shape': str(model.input_shape),
+            'output_shape': str(model.output_shape),
+            'parameters': model.count_params()
+        }
+    else:
+        info['double_gyre'] = {'loaded': False}
+
+    if models['malkus_waterwheel']:
+        model = models['malkus_waterwheel']
+        info['malkus_waterwheel'] = {
+            'loaded': True,
+            'input_shape': str(model.input_shape),
+            'output_shape': str(model.output_shape),
+            'parameters': model.count_params()
+        }
+    else:
+        info['malkus_waterwheel'] = {'loaded': False}
     
     return jsonify(info)
 
@@ -283,9 +492,14 @@ if __name__ == '__main__':
     logger.info("\nServer starting...")
     logger.info("API Endpoints:")
     logger.info("  GET  /health - Health check")
+    logger.info("  GET  /api/status - Compatibility status")
     logger.info("  GET  /api/models/info - Model information")
     logger.info("  POST /api/three-body/predict - Three-body predictions")
     logger.info("  POST /api/double-pendulum/predict - Double pendulum predictions")
+    logger.info("  POST /api/lorenz/predict - Lorenz attractor predictions")
+    logger.info("  POST /api/rossler/predict - Rössler attractor predictions")
+    logger.info("  POST /api/double-gyre/predict - Double gyre predictions")
+    logger.info("  POST /api/malkus-waterwheel/predict - Malkus waterwheel predictions")
     logger.info("\nListening on http://localhost:5003")
     logger.info("="*50 + "\n")
     

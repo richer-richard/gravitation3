@@ -337,3 +337,7 @@ updatePendulumCount();
 console.log('Application started');
 console.log('Keyboard shortcuts: Space = Play/Pause, R = Reset');
 console.log('Multiple pendulum mode enabled (up to 10)');
+
+// Expose for AI chatbot + optional data sender
+window.simulator = simulator;
+window.app = window.app || { simulator };

@@ -5,6 +5,9 @@
 
 class DoubleGyreAI {
     constructor() {
+        const runtimeConfig = (typeof window !== 'undefined' && window.GRAVITATION3_CONFIG) ? window.GRAVITATION3_CONFIG : {};
+        this.modelBaseUrl = runtimeConfig.modelBaseUrl || 'http://localhost:5003';
+
         this.model = null;
         this.isLoading = false;
         this.isLoaded = false;
@@ -29,7 +32,7 @@ class DoubleGyreAI {
             console.log('Connecting to AI Model Server...');
             
             // Check if API is available
-            const response = await fetch('http://localhost:5001/api/health');
+            const response = await fetch(`${this.modelBaseUrl}/health`);
             
             if (response.ok) {
                 const data = await response.json();
@@ -43,7 +46,11 @@ class DoubleGyreAI {
                     // Start periodic predictions
                     this.startPredictions();
                 } else {
-                    throw new Error('Double Gyre model not loaded on server');
+                    this.isLoaded = false;
+                    this.isLoading = false;
+                    this.updateStatus('unavailable', 'Model Unavailable');
+                    console.warn('⚠️ Double Gyre model is not loaded on the server');
+                    return;
                 }
             } else {
                 throw new Error('API server not responding');
@@ -81,7 +88,6 @@ class DoubleGyreAI {
         }
         
         this.dataSender = new DataSender({
-            endpoint: 'http://localhost:5678/api/data/submit',
             simulationName: 'Double Gyre',
             sendInterval: 100,
             enabled: false // Disabled by default
@@ -196,31 +202,20 @@ class DoubleGyreAI {
                 return;
             }
             
-            // Sample a few particles for prediction
-            const sampleSize = Math.min(5, particles.length);
-            const sampledParticles = [];
-            
-            for (let i = 0; i < sampleSize; i++) {
-                const idx = Math.floor((i / sampleSize) * particles.length);
-                const p = particles[idx];
-                sampledParticles.push({
-                    x: p.x || 0,
-                    y: p.y || 0,
-                    vx: p.vx || 0,
-                    vy: p.vy || 0
-                });
-            }
+            // Predict the next states for a representative particle (first one).
+            const p = particles[0];
             
             const requestData = {
-                particles: sampledParticles,
+                x: p.x || 0,
+                y: p.y || 0,
                 time: simulator.time || 0,
-                A: simulator.A || 0.25,
-                epsilon: simulator.epsilon || 0.1,
-                omega: simulator.omega || 2 * Math.PI / 10
+                A: simulator.A || 0.1,
+                epsilon: simulator.epsilon || 0.25,
+                omega: simulator.omega || 0.5
             };
             
             // Call API silently in background
-            const response = await fetch('http://localhost:5001/api/double-gyre/predict', {
+            const response = await fetch(`${this.modelBaseUrl}/api/double-gyre/predict`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

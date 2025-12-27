@@ -6,6 +6,7 @@
     <title>Gravitation³ - Three-Body Problem</title>
     <link rel="stylesheet" href="../web/style.css">
     <link rel="stylesheet" href="../web/nav.css">
+    <script defer src="../shared/site-nav.js"></script>
     <style>
         body {
             margin: 0;
@@ -217,18 +218,5 @@
     </div>
 
     <script src="../web/music-player.js"></script>
-    <script>
-        // Mobile menu toggle
-        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
-        const navLinksLeft = document.querySelector('.nav-left .nav-links');
-        const navLinksRight = document.querySelector('.nav-right .nav-links');
-
-        if (mobileMenuToggle) {
-            mobileMenuToggle.addEventListener('click', () => {
-                if (navLinksLeft) navLinksLeft.classList.toggle('active');
-                if (navLinksRight) navLinksRight.classList.toggle('active');
-            });
-        }
-    </script>
 </body>
 </html>

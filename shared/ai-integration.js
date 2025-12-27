@@ -45,7 +45,8 @@ class AIIntegration {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ trajectory })
+                // Model server expects a (seq_len, feature_dim) input sequence.
+                body: JSON.stringify({ sequence: trajectory })
             });
 
             if (!response.ok) {

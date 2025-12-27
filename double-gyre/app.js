@@ -263,6 +263,8 @@ class DoubleGyreApp {
 let app;
 document.addEventListener('DOMContentLoaded', () => {
     app = new DoubleGyreApp();
+    window.app = app;
+    window.simulator = app.simulator; // Expose for AI chatbot + (optional) data sender
 });
 
 // Cleanup on page unload

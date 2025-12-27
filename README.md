@@ -28,6 +28,36 @@ Imagine being able to play with the forces that govern our universe – from the
 
 That's it! Seriously. No installation, no complicated setup, no Python or other programming tools needed. If you can open a webpage, you're good to go.
 
+### 🤖 Optional: AI Assistant + Live Data Backend
+
+The simulations run fully client-side, but the **AI assistant** (chat + vision) and **live data enrichment** can optionally run via local backend services.
+
+1. Create a Python venv + install backend deps:
+   ```bash
+   python3 -m venv venv
+   ./venv/bin/pip install -r api/requirements.txt
+   ```
+2. Configure `api/.env`:
+   ```bash
+   cp api/.env.example api/.env
+   ```
+3. Start servers:
+   ```bash
+   ./app.py
+   ```
+
+### ✅ Recommended for AI: Dev Mode (backend + local web server)
+
+If you want the most reliable experience (and to avoid `file://` browser limitations), run:
+
+```bash
+./scripts/start_dev.sh
+```
+
+Then open: `http://localhost:8000/web/index.html`
+
+See `docs/LIVE_DATA_ACCESS_GUIDE.md` for more details and troubleshooting.
+
 ---
 
 ## 🌐 Browser Compatibility

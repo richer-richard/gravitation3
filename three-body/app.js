@@ -944,5 +944,6 @@ class ThreeBodyApp {
 // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new ThreeBodyApp();
+    window.simulator = window.app.simulator; // Expose for AI chatbot + data sender
     console.log('Gravitation³ - Three-Body Simulator initialized');
 });

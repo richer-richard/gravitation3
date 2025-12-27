@@ -11,14 +11,15 @@ import webbrowser
 import time
 import signal
 import atexit
+import argparse
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TypedDict
 
 # Get the directory where this script is located
 SCRIPT_DIR = Path(__file__).parent.resolve()
 API_DIR = SCRIPT_DIR / "api"
 WEB_DIR = SCRIPT_DIR / "web"
-HTML_FILE = WEB_DIR / "index.html"
+DEFAULT_HTML_FILE = WEB_DIR / "index.html"
 
 # Server configurations
 SERVERS = [
@@ -42,20 +43,38 @@ SERVERS = [
     }
 ]
 
+class ManagedProcess(TypedDict):
+    name: str
+    port: int
+    emoji: str
+    proc: subprocess.Popen[str]
+
+
 # Store processes for cleanup
-processes: list[Optional[subprocess.Popen[str]]] = []
+processes: list[ManagedProcess] = []
 
 
 def cleanup():
     """Clean up processes on exit."""
     print("\n\n🛑 Shutting down all servers...")
-    for proc in processes:
-        if proc and proc.poll() is None:  # Process is still running
+    for entry in processes:
+        proc = entry.get("proc")
+        if proc.poll() is None:  # Process is still running
             try:
-                proc.terminate()
+                # Try graceful shutdown of the full process group (bash + python child)
+                if hasattr(os, "killpg"):
+                    os.killpg(proc.pid, signal.SIGTERM)
+                else:
+                    proc.terminate()
                 proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
-                proc.kill()
+                try:
+                    if hasattr(os, "killpg"):
+                        os.killpg(proc.pid, signal.SIGKILL)
+                    else:
+                        proc.kill()
+                except Exception as e:
+                    print(f"Error killing process group: {e}")
             except Exception as e:
                 print(f"Error terminating process: {e}")
     print("✅ All servers stopped.")
@@ -104,10 +123,10 @@ def start_server(server_config):
         # Run the shell script in a new process
         proc = subprocess.Popen(
             ["/bin/bash", str(script)],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            stdout=None,
+            stderr=None,
             text=True,
-            bufsize=1
+            start_new_session=True
         )
         print(f"✅ {name} started on port {port}")
         return proc
@@ -116,22 +135,22 @@ def start_server(server_config):
         return None
 
 
-def open_browser():
+def open_browser(html_file: Path):
     """Open the main HTML file in the default browser."""
     print("\n\n🌐 Opening Gravitation³ in browser...")
 
-    if not check_file_exists(HTML_FILE):
+    if not check_file_exists(html_file):
         print("❌ Cannot open browser: HTML file not found")
         return
 
     try:
         # Convert to file:// URL
-        file_url = HTML_FILE.as_uri()
+        file_url = html_file.as_uri()
         webbrowser.open(file_url)
         print(f"✅ Opened: {file_url}")
     except Exception as e:
         print(f"❌ Error opening browser: {e}")
-        print(f"📂 You can manually open: {HTML_FILE}")
+        print(f"📂 You can manually open: {html_file}")
 
 
 def print_banner():
@@ -163,6 +182,19 @@ def print_startup_info():
 
 def main():
     """Main entry point."""
+    parser = argparse.ArgumentParser(description="Gravitation³ launcher")
+    parser.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="Start backend servers but do not open a browser tab",
+    )
+    parser.add_argument(
+        "--html",
+        default=str(DEFAULT_HTML_FILE),
+        help="HTML file to open (default: web/index.html)",
+    )
+    args = parser.parse_args()
+
     # Register signal handlers
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
@@ -186,13 +218,22 @@ def main():
     for server_config in SERVERS:
         proc = start_server(server_config)
         if proc:
-            processes.append(proc)
+            processes.append({
+                "name": server_config["name"],
+                "port": server_config["port"],
+                "emoji": server_config["emoji"],
+                "proc": proc
+            })
 
     # Brief delay to ensure servers are starting
     time.sleep(2)
 
     # Open the main HTML file
-    open_browser()
+    html_file = Path(args.html).expanduser()
+    if not html_file.is_absolute():
+        html_file = (SCRIPT_DIR / html_file).resolve()
+    if not args.no_browser:
+        open_browser(html_file)
 
     print_startup_info()
 
@@ -200,9 +241,10 @@ def main():
     try:
         while True:
             # Check if any process has crashed
-            for i, proc in enumerate(processes):
-                if proc and proc.poll() is not None:
-                    server_name = SERVERS[i]["name"]
+            for entry in processes:
+                proc = entry.get("proc")
+                if proc.poll() is not None:
+                    server_name = entry.get("name", "Server")
                     print(f"\n⚠️  Warning: {server_name} has stopped (exit code: {proc.returncode})")
 
             time.sleep(1)

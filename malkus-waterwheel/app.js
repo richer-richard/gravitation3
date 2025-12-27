@@ -440,6 +440,8 @@ class MalkusWheelApp {
 let app;
 document.addEventListener('DOMContentLoaded', () => {
     app = new MalkusWheelApp();
+    window.app = app;
+    window.simulator = app.simulators?.[0] || null; // Expose primary wheel for AI chatbot
 });
 
 // Cleanup on page unload

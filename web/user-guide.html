@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="nav.css">
     <script defer src="../shared/browser-support.js"></script>
+    <script defer src="../shared/site-nav.js"></script>
     <style>
         body { margin: 0; padding: 0; }
         .docs-container { min-height: calc(100vh - 70px); margin-top: 70px; padding: 4rem 2rem; background: radial-gradient(ellipse at center, #1a1f3a 0%, #0a0e27 100%); }
@@ -259,17 +260,6 @@
         </div>
     </div>
 
-    <script>
-        const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
-        const navLinksLeft = document.querySelector('.nav-left .nav-links');
-        const navLinksRight = document.querySelector('.nav-right .nav-links');
-        if (mobileMenuToggle) {
-            mobileMenuToggle.addEventListener('click', () => {
-                navLinksLeft.classList.toggle('active');
-                navLinksRight.classList.toggle('active');
-            });
-        }
-    </script>
     <!-- Background Music -->
     <audio id="bg-music" loop>
         <source src="music/joan of arc. - barnes blvd.flac" type="audio/flac">

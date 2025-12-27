@@ -52,7 +52,8 @@ class MalkusWheelVisualizer {
         // Renderer
         this.renderer = new THREE.WebGLRenderer({ 
             antialias: true,
-            alpha: true
+            alpha: true,
+            preserveDrawingBuffer: true // enable reliable snapshots
         });
         this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));

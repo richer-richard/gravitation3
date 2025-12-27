@@ -4,25 +4,124 @@
  * Enhanced with history management, code execution, and data visualization
  */
 
+const GRAVITATION3_RUNTIME_CONFIG_KEY = 'gravitation3_config';
+
+const safeJsonParse = (value, fallback = {}) => {
+    if (!value) return fallback;
+    try {
+        const parsed = JSON.parse(value);
+        return parsed && typeof parsed === 'object' ? parsed : fallback;
+    } catch {
+        return fallback;
+    }
+};
+
+const readStoredRuntimeConfig = () => {
+    if (typeof window === 'undefined' || !window.localStorage) return {};
+    try {
+        return safeJsonParse(window.localStorage.getItem(GRAVITATION3_RUNTIME_CONFIG_KEY), {});
+    } catch {
+        return {};
+    }
+};
+
+const writeStoredRuntimeConfig = (config) => {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    try {
+        window.localStorage.setItem(GRAVITATION3_RUNTIME_CONFIG_KEY, JSON.stringify(config ?? {}));
+    } catch {
+        // Ignore storage errors (private mode / quota)
+    }
+};
+
+const clearStoredRuntimeConfig = () => {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    try {
+        window.localStorage.removeItem(GRAVITATION3_RUNTIME_CONFIG_KEY);
+    } catch {
+        // Ignore storage errors
+    }
+};
+
+const getRuntimeConfig = () => {
+    const stored = readStoredRuntimeConfig();
+    const provided =
+        (typeof window !== 'undefined' && window.GRAVITATION3_CONFIG && typeof window.GRAVITATION3_CONFIG === 'object')
+            ? window.GRAVITATION3_CONFIG
+            : {};
+    return { ...stored, ...provided };
+};
+
+// Promote stored config to the global namespace so other scripts can read it.
+if (typeof window !== 'undefined') {
+    try {
+        window.GRAVITATION3_CONFIG = getRuntimeConfig();
+    } catch {
+        // Ignore
+    }
+}
+
+const updateRuntimeConfig = (patch, { persist = true } = {}) => {
+    if (typeof window === 'undefined') return;
+    const stored = readStoredRuntimeConfig();
+    const next = { ...stored, ...(patch ?? {}) };
+    if (persist) writeStoredRuntimeConfig(next);
+
+    const currentGlobal =
+        (window.GRAVITATION3_CONFIG && typeof window.GRAVITATION3_CONFIG === 'object') ? window.GRAVITATION3_CONFIG : {};
+    window.GRAVITATION3_CONFIG = { ...currentGlobal, ...(patch ?? {}) };
+
+    try {
+        window.dispatchEvent(new CustomEvent('gravitation3:config-changed', { detail: { config: window.GRAVITATION3_CONFIG } }));
+    } catch {
+        // Ignore CustomEvent issues
+    }
+};
+
+const toBool = (value, fallback) => {
+    if (value === true || value === false) return value;
+    if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        if (normalized === 'true') return true;
+        if (normalized === 'false') return false;
+    }
+    return fallback;
+};
+
+const normalizeBaseUrl = (value) => {
+    if (!value) return '';
+    const trimmed = String(value).trim();
+    if (!trimmed) return '';
+    return trimmed.replace(/\/+$/, '');
+};
+
 class AIChat {
     constructor() {
+        const runtimeConfig = getRuntimeConfig();
+        const llmBaseUrl = normalizeBaseUrl(runtimeConfig.llmBaseUrl) || 'http://localhost:5001';
+
         this.config = {
-            apiEndpoint: 'http://localhost:5001/api/chat',
-            healthEndpoint: 'http://localhost:5001/api/health',
+            llmBaseUrl,
+            apiEndpoint: runtimeConfig.llmChatEndpoint || `${llmBaseUrl}/api/chat`,
+            healthEndpoint: runtimeConfig.llmHealthEndpoint || `${llmBaseUrl}/api/health`,
             maxMessages: 50,
             storagePrefix: 'gravitation3_chat_',
             historyPrefix: 'gravitation3_history_',
-            screenshotQuality: 0.8,
-            enableScreenshots: true,
-            maxHistoryPoints: 500
+            screenshotQuality: Number.isFinite(Number(runtimeConfig.screenshotQuality)) ? Number(runtimeConfig.screenshotQuality) : 0.8,
+            enableScreenshots: toBool(runtimeConfig.enableScreenshots, true),
+            maxHistoryPoints: 500,
+            includeStateByDefault: toBool(runtimeConfig.includeStateByDefault, true),
+            includeHistoryByDefault: toBool(runtimeConfig.includeHistoryByDefault, true)
         };
         
         this.state = {
             isOpen: false,
             isConnected: false,
+            connectionStatus: 'checking',
             isTyping: false,
             messages: [],
             simulationName: '',
+            simulationId: null,
             dataSource: null,
             currentAssistantMessage: '',
             currentConversationId: null,
@@ -59,6 +158,8 @@ class AIChat {
         this.createUI();
         this.attachEventListeners();
         this.ensureMathRenderer();
+        this.applyUiFromConfig();
+        this.renderConnectionStatus();
         await this.checkHealth();
         this.startHistoryTracking();
         setInterval(() => this.checkHealth(), 30000);
@@ -116,20 +217,55 @@ class AIChat {
     }
     
     getHistoricalStatistics() {
-        if (this.dataHistory.time.length < 10) return { available: false };
+        if (this.dataHistory.time.length < 10) {
+            return {
+                available: false,
+                reason: 'Collecting data (need at least 10 samples).',
+                dataPoints: this.dataHistory.time.length
+            };
+        }
+
         const n = this.dataHistory.time.length;
         const energyArr = this.dataHistory.energy;
         const momentumArr = this.dataHistory.momentum;
+
+        const safeNumber = (value, fallback = 0) => {
+            const num = Number(value);
+            return Number.isFinite(num) ? num : fallback;
+        };
+
+        const minOf = (arr) => arr.reduce((min, v) => Math.min(min, safeNumber(v, min)), safeNumber(arr[0], 0));
+        const maxOf = (arr) => arr.reduce((max, v) => Math.max(max, safeNumber(v, max)), safeNumber(arr[0], 0));
+        const avgOf = (arr) => arr.reduce((sum, v) => sum + safeNumber(v, 0), 0) / arr.length;
+
+        const trendPerSample = (arr) => {
+            if (arr.length < 2) return 0;
+            return (safeNumber(arr[arr.length - 1], 0) - safeNumber(arr[0], 0)) / (arr.length - 1);
+        };
+
         return {
             available: true,
             dataPoints: n,
             timeSpan: this.dataHistory.time[n-1] - this.dataHistory.time[0],
-            energy: { current: energyArr[n-1], average: energyArr.reduce((a,b) => a+b) / n },
-            momentum: { current: momentumArr[n-1], average: momentumArr.reduce((a,b) => a+b) / n },
+            energy: {
+                current: safeNumber(energyArr[n-1]),
+                average: avgOf(energyArr),
+                min: minOf(energyArr),
+                max: maxOf(energyArr),
+                trend: trendPerSample(energyArr)
+            },
+            momentum: {
+                current: safeNumber(momentumArr[n-1]),
+                average: avgOf(momentumArr),
+                min: minOf(momentumArr),
+                max: maxOf(momentumArr),
+                trend: trendPerSample(momentumArr)
+            },
             trajectories: this.dataHistory.positions.map((pos, i) => ({
                 body: pos.name,
                 pathLength: this.calculatePathLength(pos),
-                avgSpeed: this.calculateAverageSpeed(this.dataHistory.velocities[i])
+                avgSpeed: this.calculateAverageSpeed(this.dataHistory.velocities[i]),
+                maxSpeed: this.calculateMaxSpeed(this.dataHistory.velocities[i])
             }))
         };
     }
@@ -148,13 +284,60 @@ class AIChat {
         for (let i = 0; i < vel.vx.length; i++) sum += Math.sqrt(vel.vx[i]**2 + vel.vy[i]**2 + vel.vz[i]**2);
         return sum / vel.vx.length;
     }
+
+    calculateMaxSpeed(vel) {
+        let max = 0;
+        for (let i = 0; i < vel.vx.length; i++) {
+            const speed = Math.sqrt(vel.vx[i]**2 + vel.vy[i]**2 + vel.vz[i]**2);
+            if (speed > max) max = speed;
+        }
+        return max;
+    }
     
     configure(options = {}) {
         this.state.simulationName = options.simulationName || 'Simulation';
         this.state.dataSource = options.dataSource || null;
+        this.state.simulationId = options.simulationId || this.state.simulationId || this.generateSimulationId();
+        this.syncSimulationIdFromDataSender();
+        this.updateHeaderTitle();
         this.updateWelcomeMessage();
     }
-    
+
+    syncSimulationIdFromDataSender() {
+        if (typeof window === 'undefined') return;
+
+        const candidates = [
+            window.dataSender,
+            window.app?.dataSender,
+            window.app?.dataSender?.dataSender
+        ].filter(Boolean);
+
+        for (const sender of candidates) {
+            try {
+                const status = typeof sender.getStatus === 'function' ? sender.getStatus() : null;
+                const candidateId = status?.simulationId || sender.config?.simulationId || sender.simulationId;
+                if (candidateId) {
+                    this.state.simulationId = candidateId;
+                    return;
+                }
+            } catch (e) {}
+        }
+    }
+
+    generateSimulationId() {
+        const safeName = this.normalizeKey(this.state.simulationName || 'simulation');
+        return `${safeName}-${Date.now()}`;
+    }
+
+    normalizeKey(value) {
+        const input = (value ?? '').toString().trim().toLowerCase();
+        const ascii = input.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+        return ascii
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+/, '')
+            .replace(/-+$/, '');
+    }
+
     updateWelcomeMessage() {
         const welcome = this.elements.messages?.querySelector('.welcome-message');
         if (!welcome) return;
@@ -173,6 +356,18 @@ class AIChat {
             });
         });
     }
+
+    updateHeaderTitle() {
+        const el = this.elements.titleEl;
+        if (!el) return;
+        const name = (this.state.simulationName || '').toString().trim();
+        if (!name) {
+            el.textContent = '🤖 AI Assistant';
+            return;
+        }
+        const displayName = name.replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
+        el.textContent = `🤖 AI Assistant · ${displayName}`;
+    }
     
     autoResizeTextarea() {
         const textarea = this.elements.input;
@@ -182,7 +377,7 @@ class AIChat {
         textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
     }
     getSimulationContent() {
-        const simName = this.state.simulationName.toLowerCase();
+        const simName = this.normalizeKey(this.state.simulationName);
         const content = {
             'three-body': { 
                 title: 'Three-Body Problem', 
@@ -271,8 +466,48 @@ class AIChat {
         panel.className = 'ai-chat-panel';
         panel.innerHTML = `
             <div class="chat-header">
-                <div class="chat-title">🤖 AI Assistant</div>
-                <button class="chat-close" title="Close">✕</button>
+                <div class="chat-title" id="chat-title">🤖 AI Assistant</div>
+                <div class="chat-header-actions">
+                    <div class="chat-connection chat-connection-checking" id="chat-connection" title="LLM server status">
+                        <span class="chat-connection-dot" id="chat-connection-dot"></span>
+                        <span class="chat-connection-text" id="chat-connection-text">Checking...</span>
+                    </div>
+                    <button class="chat-settings" id="chat-settings-btn" title="Settings">⚙</button>
+                    <button class="chat-close" title="Close">✕</button>
+                </div>
+            </div>
+            <div class="chat-settings-panel" id="chat-settings-panel" aria-hidden="true">
+                <div class="chat-settings-card" role="dialog" aria-label="AI assistant settings">
+                    <div class="chat-settings-header">
+                        <div class="chat-settings-title">Settings</div>
+                        <button class="chat-settings-close" id="chat-settings-close" title="Close settings">✕</button>
+                    </div>
+                    <div class="chat-settings-body">
+                        <label class="chat-settings-label" for="chat-llm-base-url">LLM server</label>
+                        <input id="chat-llm-base-url" class="chat-settings-input" type="url" inputmode="url" placeholder="http://localhost:5001" />
+                        <div class="chat-settings-hint">Used for <code>/api/chat</code> and <code>/api/health</code>.</div>
+
+                        <div class="chat-settings-toggles">
+                            <label class="chat-settings-toggle">
+                                <input type="checkbox" id="chat-include-state" />
+                                Include simulation state by default
+                            </label>
+                            <label class="chat-settings-toggle">
+                                <input type="checkbox" id="chat-include-history" />
+                                Include recent history by default
+                            </label>
+                            <label class="chat-settings-toggle">
+                                <input type="checkbox" id="chat-enable-snapshots" />
+                                Enable snapshots
+                            </label>
+                        </div>
+                    </div>
+                    <div class="chat-settings-actions">
+                        <button class="chat-settings-btn secondary" id="chat-settings-reset" type="button">Reset</button>
+                        <button class="chat-settings-btn" id="chat-settings-test" type="button">Test</button>
+                        <button class="chat-settings-btn primary" id="chat-settings-save" type="button">Save</button>
+                    </div>
+                </div>
             </div>
             <div class="chat-messages" id="chat-messages">
                 <div class="welcome-message">
@@ -286,6 +521,7 @@ class AIChat {
                 <div id="chat-file-list" class="chat-file-list"></div>
                 <div class="chat-input-row" id="chat-drag-drop-zone">
                     <button class="chat-upload-btn" id="chat-upload-btn" title="Upload file or drag & drop (Max 10MB)">+</button>
+                    <button class="chat-snapshot-btn" id="chat-snapshot-btn" title="Attach a snapshot from the simulation canvas">📷</button>
                     <textarea id="chat-input" placeholder="Ask anything... (Shift+Enter for new line, Enter to send)" rows="1"></textarea>
                     <button class="chat-send" id="chat-send" title="Send message">
                         <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
@@ -301,11 +537,26 @@ class AIChat {
         this.elements = {
             button: btn,
             panel: panel,
+            titleEl: panel.querySelector('#chat-title'),
+            connectionBadge: panel.querySelector('#chat-connection'),
+            connectionDot: panel.querySelector('#chat-connection-dot'),
+            connectionText: panel.querySelector('#chat-connection-text'),
+            settingsBtn: panel.querySelector('#chat-settings-btn'),
+            settingsPanel: panel.querySelector('#chat-settings-panel'),
+            settingsCloseBtn: panel.querySelector('#chat-settings-close'),
+            settingsSaveBtn: panel.querySelector('#chat-settings-save'),
+            settingsResetBtn: panel.querySelector('#chat-settings-reset'),
+            settingsTestBtn: panel.querySelector('#chat-settings-test'),
+            settingsLlmBaseUrl: panel.querySelector('#chat-llm-base-url'),
+            settingsIncludeState: panel.querySelector('#chat-include-state'),
+            settingsIncludeHistory: panel.querySelector('#chat-include-history'),
+            settingsEnableSnapshots: panel.querySelector('#chat-enable-snapshots'),
             messages: panel.querySelector('#chat-messages'),
             input: panel.querySelector('#chat-input'),
             sendBtn: panel.querySelector('#chat-send'),
             closeBtn: panel.querySelector('.chat-close'),
             uploadBtn: panel.querySelector('#chat-upload-btn'),
+            snapshotBtn: panel.querySelector('#chat-snapshot-btn'),
             fileInput: panel.querySelector('#file-input-chat'),
             fileList: panel.querySelector('#chat-file-list'),
             dragDropZone: panel.querySelector('#chat-drag-drop-zone'),
@@ -320,6 +571,17 @@ class AIChat {
         
         // Close button click to close panel
         this.elements.closeBtn.addEventListener('click', () => this.togglePanel());
+
+        // Settings
+        this.elements.settingsBtn?.addEventListener('click', () => this.toggleSettings());
+        this.elements.settingsCloseBtn?.addEventListener('click', () => this.closeSettings());
+        this.elements.settingsSaveBtn?.addEventListener('click', () => this.saveSettingsFromForm());
+        this.elements.settingsResetBtn?.addEventListener('click', () => this.resetSettings());
+        this.elements.settingsTestBtn?.addEventListener('click', () => this.testConnection());
+
+        this.elements.settingsPanel?.addEventListener('click', (event) => {
+            if (event.target === this.elements.settingsPanel) this.closeSettings();
+        });
         
         this.elements.sendBtn.addEventListener('click', () => this.sendMessage());
         this.elements.input.addEventListener('keydown', (e) => {
@@ -337,6 +599,11 @@ class AIChat {
         // File upload button
         this.elements.uploadBtn.addEventListener('click', () => {
             this.elements.fileInput.click();
+        });
+
+        // Snapshot button
+        this.elements.snapshotBtn.addEventListener('click', () => {
+            this.toggleSnapshot();
         });
         
         this.elements.fileInput.addEventListener('change', (e) => {
@@ -361,6 +628,159 @@ class AIChat {
                 this.handleDragDropFile(files[0]);
             }
         });
+    }
+
+    applyUiFromConfig() {
+        this.hydrateSettingsForm();
+
+        if (this.elements.snapshotBtn) {
+            const enabled = !!this.config.enableScreenshots;
+            this.elements.snapshotBtn.disabled = !enabled;
+            this.elements.snapshotBtn.classList.toggle('disabled', !enabled);
+            this.elements.snapshotBtn.title = enabled
+                ? 'Attach a snapshot from the simulation canvas'
+                : 'Snapshots disabled (enable in Settings)';
+            if (!enabled) this.clearSnapshot();
+        }
+
+        this.updateHeaderTitle();
+    }
+
+    renderConnectionStatus() {
+        const badge = this.elements.connectionBadge;
+        const textEl = this.elements.connectionText;
+        if (!badge || !textEl) return;
+
+        badge.classList.remove('chat-connection-online', 'chat-connection-offline', 'chat-connection-checking');
+
+        if (this.state.connectionStatus === 'checking') {
+            badge.classList.add('chat-connection-checking');
+            textEl.textContent = 'Checking...';
+            return;
+        }
+
+        if (this.state.isConnected) {
+            badge.classList.add('chat-connection-online');
+            textEl.textContent = 'Online';
+            return;
+        }
+
+        badge.classList.add('chat-connection-offline');
+        textEl.textContent = 'Offline';
+    }
+
+    hydrateSettingsForm() {
+        if (!this.elements.settingsLlmBaseUrl) return;
+        this.elements.settingsLlmBaseUrl.value = this.config.llmBaseUrl || 'http://localhost:5001';
+
+        if (this.elements.settingsIncludeState) this.elements.settingsIncludeState.checked = !!this.config.includeStateByDefault;
+        if (this.elements.settingsIncludeHistory) this.elements.settingsIncludeHistory.checked = !!this.config.includeHistoryByDefault;
+        if (this.elements.settingsEnableSnapshots) this.elements.settingsEnableSnapshots.checked = !!this.config.enableScreenshots;
+    }
+
+    isSettingsOpen() {
+        return !!this.elements.settingsPanel?.classList.contains('open');
+    }
+
+    openSettings() {
+        if (!this.elements.settingsPanel) return;
+        this.hydrateSettingsForm();
+        this.elements.settingsPanel.classList.add('open');
+        this.elements.settingsPanel.setAttribute('aria-hidden', 'false');
+        setTimeout(() => this.elements.settingsLlmBaseUrl?.focus(), 0);
+    }
+
+    closeSettings() {
+        if (!this.elements.settingsPanel) return;
+        this.elements.settingsPanel.classList.remove('open');
+        this.elements.settingsPanel.setAttribute('aria-hidden', 'true');
+    }
+
+    toggleSettings() {
+        if (this.isSettingsOpen()) this.closeSettings();
+        else this.openSettings();
+    }
+
+    async saveSettingsFromForm() {
+        const rawBaseUrl = this.elements.settingsLlmBaseUrl?.value ?? '';
+        const baseUrl = normalizeBaseUrl(rawBaseUrl) || 'http://localhost:5001';
+
+        if (!/^https?:\/\//i.test(baseUrl)) {
+            this.addMessage('system', '⚠️ Invalid server URL. Use http:// or https:// (example: http://localhost:5001).');
+            return;
+        }
+
+        const includeState = !!this.elements.settingsIncludeState?.checked;
+        const includeHistory = !!this.elements.settingsIncludeHistory?.checked;
+        const enableSnapshots = !!this.elements.settingsEnableSnapshots?.checked;
+
+        this.config.llmBaseUrl = baseUrl;
+        this.config.apiEndpoint = `${baseUrl}/api/chat`;
+        this.config.healthEndpoint = `${baseUrl}/api/health`;
+        this.config.includeStateByDefault = includeState;
+        this.config.includeHistoryByDefault = includeHistory;
+        this.config.enableScreenshots = enableSnapshots;
+
+        updateRuntimeConfig({
+            llmBaseUrl: baseUrl,
+            includeStateByDefault: includeState,
+            includeHistoryByDefault: includeHistory,
+            enableScreenshots: enableSnapshots
+        });
+
+        this.applyUiFromConfig();
+        this.closeSettings();
+
+        await this.checkHealth();
+        this.addMessage('system', '✅ Settings saved.');
+    }
+
+    async resetSettings() {
+        clearStoredRuntimeConfig();
+
+        if (typeof window !== 'undefined' && window.GRAVITATION3_CONFIG && typeof window.GRAVITATION3_CONFIG === 'object') {
+            for (const key of [
+                'llmBaseUrl',
+                'llmChatEndpoint',
+                'llmHealthEndpoint',
+                'includeStateByDefault',
+                'includeHistoryByDefault',
+                'enableScreenshots',
+                'screenshotQuality'
+            ]) {
+                try {
+                    delete window.GRAVITATION3_CONFIG[key];
+                } catch {}
+            }
+            try {
+                window.dispatchEvent(new CustomEvent('gravitation3:config-changed', { detail: { config: window.GRAVITATION3_CONFIG } }));
+            } catch {}
+        }
+
+        const runtimeConfig = getRuntimeConfig();
+        const llmBaseUrl = normalizeBaseUrl(runtimeConfig.llmBaseUrl) || 'http://localhost:5001';
+
+        this.config.llmBaseUrl = llmBaseUrl;
+        this.config.apiEndpoint = runtimeConfig.llmChatEndpoint || `${llmBaseUrl}/api/chat`;
+        this.config.healthEndpoint = runtimeConfig.llmHealthEndpoint || `${llmBaseUrl}/api/health`;
+        this.config.includeStateByDefault = toBool(runtimeConfig.includeStateByDefault, true);
+        this.config.includeHistoryByDefault = toBool(runtimeConfig.includeHistoryByDefault, true);
+        this.config.enableScreenshots = toBool(runtimeConfig.enableScreenshots, true);
+
+        this.applyUiFromConfig();
+        this.closeSettings();
+
+        this.state.connectionStatus = 'checking';
+        this.state.isConnected = false;
+        this.renderConnectionStatus();
+        await this.checkHealth();
+
+        this.addMessage('system', '✅ Settings reset.');
+    }
+
+    async testConnection() {
+        await this.checkHealth();
+        this.addMessage('system', this.state.isConnected ? '✅ LLM server reachable.' : '⚠️ LLM server is offline.');
     }
     
     handleFileUpload(event) {
@@ -423,6 +843,7 @@ class AIChat {
     displayImagePreview(dataUrl, fileName) {
         const container = this.elements.imagePreviewContainer;
         container.innerHTML = '';
+        container.style.maxHeight = '260px';
         
         const previewBubble = document.createElement('div');
         previewBubble.className = 'chat-image-preview-bubble';
@@ -438,6 +859,7 @@ class AIChat {
             this.attachments = this.attachments.filter(a => a.name !== fileName);
             this.updateFileList();
             container.innerHTML = '';
+            container.style.maxHeight = '0';
         });
         
         container.appendChild(previewBubble);
@@ -475,45 +897,181 @@ class AIChat {
             this.elements.input.focus();
         } else {
             // Hide panel
+            this.closeSettings();
             this.elements.panel.classList.remove('open');
         }
     }
     
     async checkHealth() {
         try {
-            const response = await fetch(this.config.healthEndpoint);
-            const data = await response.json();
-            this.state.isConnected = data.status === 'healthy';
+            const response = await fetch(this.config.healthEndpoint, {
+                method: 'GET',
+                mode: 'cors',
+                cache: 'no-cache'
+            });
+
+            let data = {};
+            try {
+                data = await response.json();
+            } catch {
+                data = {};
+            }
+
+            const connected =
+                response.ok &&
+                (data.status === 'healthy' || data.status === 'running' || data.ready === true || data.ok === true || data.success === true);
+
+            this.state.isConnected = connected;
+            this.state.connectionStatus = connected ? 'online' : 'offline';
         } catch (error) {
             this.state.isConnected = false;
+            this.state.connectionStatus = 'offline';
         }
+
+        this.renderConnectionStatus();
     }
     
     getSimulationData() {
-        const data = { time: 0, energy: 0, fps: 60, bodies: [], parameters: {} };
+        const data = {
+            simulation_id: this.state.simulationId,
+            time: 0,
+            energy: 0,
+            entropy: 0,
+            fps: 60,
+            timestep: 0,
+            steps: 0,
+            bodies: [],
+            parameters: {},
+            statistics: {}
+        };
         if (!this.state.dataSource) return data;
         try {
             const s = this.state.dataSource;
+
             data.time = s.time ?? 0;
+            data.steps = s.steps ?? 0;
+            data.timestep = s.dt ?? 0;
+
             data.energy = typeof s.calculateTotalEnergy === 'function' ? s.calculateTotalEnergy() : (s.energy ?? 0);
+            data.entropy = typeof s.calculateEntropy === 'function' ? s.calculateEntropy() : (s.entropy ?? 0);
+            data.fps = window.lastFPS ?? 60;
+
+            const vec3 = (v) => {
+                if (!v) return [0, 0, 0];
+                if (Array.isArray(v)) return [v[0] ?? 0, v[1] ?? 0, v[2] ?? 0];
+                return [v.x ?? 0, v.y ?? 0, v.z ?? 0];
+            };
+
             if (s.bodies && Array.isArray(s.bodies)) {
-                data.bodies = s.bodies.map((b, i) => {
-                    const vec = (v) => {
-                        if (!v) return [0,0,0];
-                        if (Array.isArray(v)) return v;
-                        return [v.x ?? 0, v.y ?? 0, v.z ?? 0];
-                    };
-                    return { name: b.name ?? `Body ${i+1}`, mass: b.mass ?? 1, position: vec(b.position), velocity: vec(b.velocity) };
-                });
+                data.bodies = s.bodies.map((b, i) => ({
+                    name: b.name ?? `Body ${i + 1}`,
+                    mass: b.mass ?? 1,
+                    position: vec3(b.position),
+                    velocity: vec3(b.velocity),
+                    color: b.color ?? 0xffffff
+                }));
+            } else if (s.trajectories && Array.isArray(s.trajectories)) {
+                data.bodies = s.trajectories.map((traj, i) => ({
+                    name: traj.name ?? `Trajectory ${i + 1}`,
+                    mass: 1,
+                    position: [traj.state?.x ?? 0, traj.state?.y ?? 0, traj.state?.z ?? 0],
+                    velocity: [0, 0, 0],
+                    color: traj.color ?? 0xffffff
+                }));
             }
+
+            if (s.G !== undefined) data.parameters.G = s.G;
+            if (s.a !== undefined) data.parameters.a = s.a;
+            if (s.b !== undefined) data.parameters.b = s.b;
+            if (s.c !== undefined) data.parameters.c = s.c;
+            if (s.sigma !== undefined) data.parameters.sigma = s.sigma;
+            if (s.rho !== undefined) data.parameters.rho = s.rho;
+            if (s.beta !== undefined) data.parameters.beta = s.beta;
+            if (s.A !== undefined) data.parameters.A = s.A;
+            if (s.epsilon !== undefined) data.parameters.epsilon = s.epsilon;
+            if (s.omega !== undefined) data.parameters.omega = s.omega;
+            if (s.Q !== undefined) data.parameters.Q = s.Q;
+            if (s.K !== undefined) data.parameters.K = s.K;
+            if (s.nu !== undefined) data.parameters.nu = s.nu;
+            if (s.collisionsEnabled !== undefined) data.parameters.collisionsEnabled = s.collisionsEnabled;
+
+            if (typeof s.getMaxDistance === 'function') data.statistics.maxDistance = s.getMaxDistance();
+            if (typeof s.getAverageVelocity === 'function') data.statistics.avgVelocity = s.getAverageVelocity();
         } catch (e) {}
         return data;
+    }
+
+    toggleSnapshot() {
+        if (this.currentScreenshot) {
+            this.clearSnapshot();
+            return;
+        }
+        const dataUrl = this.captureScreenshot();
+        if (!dataUrl) {
+            this.addMessage('system', '⚠️ Could not capture a snapshot (canvas not available).');
+            return;
+        }
+        this.currentScreenshot = dataUrl;
+        this.displaySnapshotPreview(dataUrl);
+        this.elements.snapshotBtn.classList.add('active');
+    }
+
+    clearSnapshot() {
+        this.currentScreenshot = null;
+        if (this.elements.imagePreviewContainer) {
+            this.elements.imagePreviewContainer.innerHTML = '';
+            this.elements.imagePreviewContainer.style.maxHeight = '0';
+        }
+        this.elements.snapshotBtn.classList.remove('active');
+    }
+
+    captureScreenshot() {
+        if (!this.config.enableScreenshots) return null;
+        const canvas =
+            document.querySelector('#main-canvas') ||
+            document.querySelector('#canvas-container canvas') ||
+            document.querySelector('canvas');
+        if (!canvas || typeof canvas.toDataURL !== 'function') return null;
+        try {
+            return canvas.toDataURL('image/jpeg', this.config.screenshotQuality);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    displaySnapshotPreview(dataUrl) {
+        const container = this.elements.imagePreviewContainer;
+        if (!container) return;
+        container.innerHTML = '';
+        container.style.maxHeight = '260px';
+
+        const previewBubble = document.createElement('div');
+        previewBubble.className = 'chat-image-preview-bubble';
+        previewBubble.innerHTML = `
+            <div class="image-preview-header">
+                <span class="image-name">snapshot.jpg</span>
+                <button class="image-remove-btn" title="Remove snapshot">✕</button>
+            </div>
+            <img src="${dataUrl}" alt="snapshot" class="preview-img">
+        `;
+
+        previewBubble.querySelector('.image-remove-btn').addEventListener('click', () => {
+            this.clearSnapshot();
+        });
+
+        container.appendChild(previewBubble);
     }
     
     async sendMessage() {
         const msg = this.elements.input.value.trim();
-        if (!msg && (!this.attachments || this.attachments.length === 0)) return;
-        if (!this.state.isConnected) { this.addMessage('system', '⚠️ Server not connected'); return; }
+        if (!msg && (!this.attachments || this.attachments.length === 0) && !this.currentScreenshot) return;
+        if (!this.state.isConnected) {
+            await this.checkHealth();
+            if (!this.state.isConnected) {
+                this.addMessage('system', `⚠️ LLM server offline. Check ${this.config.healthEndpoint} or update Settings (⚙).`);
+                return;
+            }
+        }
         
         this.elements.input.value = '';
         
@@ -528,11 +1086,15 @@ class AIChat {
         this.showTypingIndicator();
         
         try {
+            this.syncSimulationIdFromDataSender();
+            const currentState = this.config.includeStateByDefault ? this.getSimulationData() : {};
+            const historicalStats = this.config.includeHistoryByDefault ? this.getHistoricalStatistics() : null;
+
             // Prepare request body - use FormData if there are file attachments
             let requestBody;
             let headers = {};
             
-            if (this.attachments && this.attachments.length > 0) {
+            if ((this.attachments && this.attachments.length > 0) || this.currentScreenshot) {
                 // Use FormData for multipart file upload
                 const formData = new FormData();
                 
@@ -540,11 +1102,14 @@ class AIChat {
                 formData.append('messages', JSON.stringify(
                     [
                         ...this.state.messages.map(m => ({ role: m.role, content: m.content })),
-                        { role: 'user', content: msg }
                     ]
                 ));
                 formData.append('simulation', this.state.simulationName);
                 formData.append('stream', 'true');
+
+                formData.append('currentState', JSON.stringify(currentState));
+                if (historicalStats) formData.append('historicalStats', JSON.stringify(historicalStats));
+                if (this.currentScreenshot) formData.append('screenshot', this.currentScreenshot);
                 
                 // Add file attachments
                 this.attachments.forEach((attachment, index) => {
@@ -557,11 +1122,11 @@ class AIChat {
                 // Use JSON for regular messages
                 headers['Content-Type'] = 'application/json';
                 requestBody = JSON.stringify({
-                    messages: [
-                        ...this.state.messages.map(m => ({ role: m.role, content: m.content })),
-                        { role: 'user', content: msg }
-                    ],
+                    messages: this.state.messages.map(m => ({ role: m.role, content: m.content })),
                     simulation: this.state.simulationName,
+                    currentState,
+                    historicalStats,
+                    screenshot: this.currentScreenshot,
                     stream: true
                 });
             }
@@ -596,6 +1161,7 @@ class AIChat {
                                 // Clear attachments after successful send
                                 this.attachments = [];
                                 this.updateFileList();
+                                this.clearSnapshot();
                                 
                                 return;
                             }
@@ -620,6 +1186,7 @@ class AIChat {
             // Clear attachments after successful completion
             this.attachments = [];
             this.updateFileList();
+            this.clearSnapshot();
         } catch (error) {
             this.hideTypingIndicator();
             this.addMessage('system', `Error: ${error.message}`);
