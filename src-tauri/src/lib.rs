@@ -1,4 +1,4 @@
-// Gravitation Cubed - Tauri application library
+// Gravitation3 - Tauri desktop application
 
 pub fn run() {
     tauri::Builder::default()

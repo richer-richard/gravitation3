@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicegram/nicegram-core/tauri-v2/core/tauri-config-schema/schema.json",
-  "productName": "Gravitation Cubed",
+  "productName": "Gravitation3",
   "version": "2.0.0",
-  "identifier": "com.gravitation3.app",
+  "identifier": "com.gravitation3.desktop",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:3000"
@@ -10,9 +10,10 @@
   "app": {
     "windows": [
       {
-        "title": "Gravitation Cubed",
+        "title": "Gravitation3",
         "width": 1200,
-        "height": 800
+        "height": 800,
+        "maximized": true
       }
     ],
     "security": {
