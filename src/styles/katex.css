@@ -1,0 +1,51 @@
+/* KaTeX formula overrides for dark theme */
+
+.katex {
+  font-size: 1em;
+  color: #e4e4e7;
+}
+
+.katex .mord,
+.katex .mbin,
+.katex .mrel,
+.katex .mopen,
+.katex .mclose,
+.katex .mpunct,
+.katex .minner {
+  color: inherit;
+}
+
+.katex-display {
+  margin: 0.75em 0;
+  padding: 0.5em;
+  background: rgba(39, 39, 42, 0.5);
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.katex-display > .katex {
+  text-align: center;
+}
+
+.math-error {
+  color: #f87171;
+  font-family: monospace;
+  font-size: 0.85em;
+  background: rgba(248, 113, 113, 0.1);
+  padding: 0.1em 0.3em;
+  border-radius: 0.25rem;
+}
+
+/* Scrollbar for overflow math */
+.katex-display::-webkit-scrollbar {
+  height: 4px;
+}
+
+.katex-display::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.katex-display::-webkit-scrollbar-thumb {
+  background: #52525b;
+  border-radius: 2px;
+}

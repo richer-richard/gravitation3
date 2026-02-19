@@ -1,42 +1,30 @@
 {
-  "name": "gravitation-cubed-ai",
-  "version": "1.0.0",
-  "description": "AI training system for Gravitation³ physics simulators",
-  "main": "index.js",
-  "type": "commonjs",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/richer-richard/gravitation3.git"
-  },
-  "bugs": {
-    "url": "https://github.com/richer-richard/gravitation3/issues"
-  },
-  "homepage": "https://github.com/richer-richard/gravitation3#readme",
-  "engines": {
-    "node": ">=18.0.0"
-  },
+  "name": "gravitation-cubed",
+  "version": "2.0.0",
+  "type": "module",
   "scripts": {
-    "generate-data": "node scripts/generate_training_data.js",
-    "train": "node scripts/train_classifier.js",
-    "train-predictor": "node scripts/train_surrogate.js",
-    "optimize": "node scripts/optimize_models.js",
-    "test": "node tests/test_data_generation.js"
+    "dev": "vite",
+    "build": "vite build",
+    "build:wasm": "cd crates/physics-wasm && wasm-pack build --target web --out-dir ../../src/wasm",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "server:dev": "cargo run --manifest-path server/Cargo.toml",
+    "preview": "vite preview"
   },
-  "keywords": [
-    "ai",
-    "tensorflow",
-    "physics",
-    "simulation",
-    "chaos"
-  ],
-  "author": "Gravitation³",
-  "license": "MIT",
   "dependencies": {
-    "@tensorflow/tfjs-node": "^4.13.0"
+    "three": "^0.172.0",
+    "onnxruntime-web": "^1.21.0",
+    "katex": "^0.16.0",
+    "marked": "^15.0.0",
+    "highlight.js": "^11.11.0"
   },
   "devDependencies": {
-    "chalk": "^4.1.2",
-    "cli-progress": "^3.12.0",
-    "commander": "^11.1.0"
+    "@tauri-apps/cli": "^2.0.0",
+    "@tauri-apps/api": "^2.0.0",
+    "@types/three": "^0.172.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "tailwindcss": "^4.0.0"
   }
 }

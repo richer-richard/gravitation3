@@ -1,0 +1,9 @@
+[workspace]
+members = [
+  "crates/physics-engine",
+  "crates/physics-wasm",
+  "crates/provider-adapters",
+  "src-tauri",
+  "server",
+]
+resolver = "2"
