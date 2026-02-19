@@ -6,6 +6,7 @@ import type { SimulationVisualizer } from "../simulations/SimulationManager";
 import { ParameterPanel } from "../components/ParameterPanel";
 import { ChatPanel } from "../components/ChatPanel";
 import { MetricsPanel } from "../components/MetricsPanel";
+import { SimInfoPanel } from "../components/SimInfoPanel";
 import { MODELS } from "../ai/registry";
 
 const SIM_NAMES: Record<string, string> = {
@@ -16,15 +17,6 @@ const SIM_NAMES: Record<string, string> = {
   "double-gyre": "Double Gyre",
   "malkus-waterwheel": "Malkus Waterwheel",
 };
-
-const SIDEBAR_ITEMS = [
-  { id: "three-body", label: "Three Body", icon: "&#9733;" },
-  { id: "double-pendulum", label: "Double Pend.", icon: "&#8634;" },
-  { id: "lorenz", label: "Lorenz", icon: "&#8734;" },
-  { id: "rossler", label: "Rossler", icon: "&#8635;" },
-  { id: "double-gyre", label: "Gyre", icon: "&#8776;" },
-  { id: "malkus-waterwheel", label: "Malkus", icon: "&#9881;" },
-];
 
 const DEFAULT_PRESETS: Record<string, string> = {
   "three-body": "figure8",
@@ -115,33 +107,12 @@ export async function renderSimulation(
         <!-- Sidebar -->
         <div id="sidebar" class="bg-zinc-800/80 border-r border-zinc-700 flex flex-col shrink-0 overflow-hidden"
              style="width: ${savedSidebar}px; min-width: 48px;">
-          <div class="p-2">
-            <button id="btn-collapse" class="w-full text-left px-2 py-1 text-zinc-500 hover:text-zinc-300 text-xs">
+          <div class="p-2 flex items-center justify-between">
+            <button id="btn-collapse" class="px-2 py-1 text-zinc-500 hover:text-zinc-300 text-xs">
               &#9776;
             </button>
           </div>
-          <nav class="flex-1 overflow-y-auto px-2 space-y-1">
-            ${SIDEBAR_ITEMS.map(
-              (item) => `
-              <a href="/sim/${item.id}" data-link
-                 class="flex items-center gap-2 px-2 py-2 rounded text-sm transition-colors
-                        ${item.id === type ? "bg-blue-600/20 text-blue-400" : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700/50"}">
-                <span class="text-base w-6 text-center">${item.icon}</span>
-                <span class="sidebar-label truncate">${item.label}</span>
-              </a>
-            `
-            ).join("")}
-          </nav>
-          <div class="p-2 border-t border-zinc-700 space-y-1">
-            <a href="/" data-link class="flex items-center gap-2 px-2 py-1 text-zinc-500 hover:text-zinc-300 text-xs">
-              <span class="w-6 text-center">&#8962;</span>
-              <span class="sidebar-label">Home</span>
-            </a>
-            <a href="/explore" data-link class="flex items-center gap-2 px-2 py-1 text-zinc-500 hover:text-zinc-300 text-xs">
-              <span class="w-6 text-center">&#128269;</span>
-              <span class="sidebar-label">Explore</span>
-            </a>
-          </div>
+          <div id="sim-info-mount" class="flex-1 overflow-y-auto sidebar-content"></div>
         </div>
 
         <!-- Left Resize Handle -->
@@ -190,11 +161,6 @@ export async function renderSimulation(
       </div>
     </div>
 
-    <style>
-      .tab-btn { color: #71717a; }
-      .tab-btn:hover { color: #d4d4d8; }
-      .tab-btn.active { color: #3b82f6; border-bottom: 2px solid #3b82f6; }
-    </style>
   `;
 
   // --- Initialize components ---
@@ -215,6 +181,12 @@ export async function renderSimulation(
   // Load default preset
   const defaultPreset = DEFAULT_PRESETS[type] || "standard";
   await manager.loadPreset(defaultPreset);
+
+  // Initialize sidebar info panel
+  const simInfoMount = document.getElementById("sim-info-mount")!;
+  const simInfoPanel = new SimInfoPanel(simInfoMount, type);
+  simInfoPanel.render();
+  simInfoPanel.updatePreset(defaultPreset);
 
   // Initialize panel components
   const paramPanel = new ParameterPanel(tabParams, simType, manager);
@@ -305,10 +277,10 @@ export async function renderSimulation(
   btnCollapse.addEventListener("click", () => {
     sidebarCollapsed = !sidebarCollapsed;
     sidebar.style.width = sidebarCollapsed ? "48px" : `${savedSidebar}px`;
-    const labels = sidebar.querySelectorAll(".sidebar-label");
-    labels.forEach((l) =>
-      (l as HTMLElement).classList.toggle("hidden", sidebarCollapsed)
-    );
+    const sidebarContent = sidebar.querySelector(".sidebar-content") as HTMLElement;
+    if (sidebarContent) {
+      sidebarContent.style.display = sidebarCollapsed ? "none" : "";
+    }
   });
 
   // --- Resize observer ---
@@ -362,6 +334,7 @@ export async function renderSimulation(
     cancelAnimationFrame(fpsId);
     resizeObserver.disconnect();
     manager.dispose();
+    simInfoPanel.destroy();
     paramPanel.destroy();
     chatPanel.destroy();
     metricsPanel.destroy();

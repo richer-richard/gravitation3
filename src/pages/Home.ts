@@ -252,7 +252,7 @@ export function renderHome(container: HTMLElement, _router: Router): void {
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           ${SIMULATIONS.map(
             (sim) => `
-            <a href="/sim/${sim.id}" data-link
+            <a href="/physics#${sim.id}" data-link
                class="sim-card group relative rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm overflow-hidden transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.04] hover:scale-[1.02] hover:-translate-y-1">
 
               <!-- Top accent bar -->
@@ -300,7 +300,7 @@ export function renderHome(container: HTMLElement, _router: Router): void {
                 <!-- Launch bar -->
                 <div class="mt-4 pt-3 border-t border-white/[0.04] flex items-center justify-between">
                   <span class="text-xs font-medium bg-gradient-to-r ${sim.gradient} bg-clip-text text-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
-                    Open simulation
+                    Learn the physics
                   </span>
                   <div class="w-7 h-7 rounded-lg bg-white/[0.04] group-hover:bg-white/[0.08] flex items-center justify-center transition-all duration-300 group-hover:translate-x-0.5">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" class="text-zinc-500 group-hover:text-zinc-300 transition-colors">

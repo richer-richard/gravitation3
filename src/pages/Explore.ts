@@ -1,71 +1,91 @@
 import type { Router } from "../router";
+import { SIMULATIONS } from "../data/simulations";
+import { createPageShell } from "../components/PageShell";
+import { setupScrollAnimations } from "../components/ScrollAnimator";
 
-const SIMULATIONS = [
-  {
-    id: "three-body",
-    name: "Three-Body Problem",
-    description:
-      "Three masses interact through gravity, creating unpredictable orbital patterns. Features RK4 integration, collision detection, and multiple preset configurations.",
-    category: "Gravitational",
-  },
-  {
-    id: "double-pendulum",
-    name: "Double Pendulum",
-    description:
-      "A pendulum attached to another pendulum exhibits extreme sensitivity to initial conditions. Small changes produce wildly different trajectories.",
-    category: "Mechanical",
-  },
-  {
-    id: "lorenz",
-    name: "Lorenz Attractor",
-    description:
-      "Edward Lorenz's famous system of differential equations that gave birth to chaos theory. Watch trajectories trace the butterfly-shaped attractor.",
-    category: "Attractor",
-  },
-  {
-    id: "rossler",
-    name: "Rossler Attractor",
-    description:
-      "Otto Rossler's simpler chaotic system produces elegant spiral patterns with a distinctive folding mechanism in phase space.",
-    category: "Attractor",
-  },
-  {
-    id: "double-gyre",
-    name: "Double Gyre",
-    description:
-      "Model of oceanic circulation with two counter-rotating flow patterns. Particles reveal Lagrangian coherent structures and chaotic mixing.",
-    category: "Fluid",
-  },
-  {
-    id: "malkus-waterwheel",
-    name: "Malkus Waterwheel",
-    description:
-      "A mechanical system analogous to the Lorenz attractor. Water dripping into rotating buckets creates chaotic direction reversals.",
-    category: "Mechanical",
-  },
-];
+export function renderExplore(container: HTMLElement, router: Router): void {
+  const { contentArea, scrollRoot } = createPageShell(container, router);
 
-export function renderExplore(container: HTMLElement, _router: Router): void {
-  container.innerHTML = `
-    <div class="min-h-screen bg-zinc-900 px-6 py-12">
-      <div class="max-w-5xl mx-auto">
-        <a href="/" data-link class="text-zinc-500 hover:text-zinc-300 text-sm mb-8 inline-block">&larr; Home</a>
-        <h1 class="text-4xl font-bold text-zinc-100 mb-2">Simulations</h1>
-        <p class="text-zinc-400 mb-10">Choose a dynamical system to explore.</p>
+  contentArea.innerHTML = `
+    <div class="max-w-6xl mx-auto px-6">
+      <!-- Hero -->
+      <div class="text-center mb-16">
+        <h1 class="page-title text-5xl sm:text-6xl font-extrabold tracking-tight mb-4">
+          Launch Workstation
+        </h1>
+        <p class="text-zinc-400 text-base sm:text-lg max-w-lg mx-auto leading-relaxed">
+          Choose a dynamical system to explore interactively.
+        </p>
+      </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          ${SIMULATIONS.map(
-            (sim) => `
-            <a href="/sim/${sim.id}" data-link
-               class="group block p-6 bg-zinc-800/50 rounded-xl border border-zinc-700/50 hover:border-blue-500/50 hover:bg-zinc-800 transition-all">
-              <span class="inline-block px-2 py-0.5 text-xs rounded bg-zinc-700 text-zinc-400 mb-3">${sim.category}</span>
-              <h3 class="text-xl font-semibold text-zinc-100 group-hover:text-blue-400 transition-colors">${sim.name}</h3>
-              <p class="mt-2 text-sm text-zinc-400 leading-relaxed">${sim.description}</p>
-            </a>
-          `
-          ).join("")}
-        </div>
+      <!-- Sim Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        ${SIMULATIONS.map(
+          (sim) => `
+          <a href="/sim/${sim.id}" data-link
+             class="sim-card group relative rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm overflow-hidden transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.04] hover:scale-[1.02] hover:-translate-y-1">
+
+            <!-- Top accent bar -->
+            <div class="sim-card-accent bg-gradient-to-r ${sim.gradient}"></div>
+
+            <!-- Glow on hover -->
+            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                 style="background:radial-gradient(ellipse at 50% 0%,${sim.glow},transparent 70%)"></div>
+
+            <!-- Preview area -->
+            <div class="sim-card-preview m-4 mb-0">
+              <div class="sim-card-preview-inner flex items-center justify-center">
+                ${sim.previewSvg}
+              </div>
+              <!-- Category badge -->
+              <div class="absolute top-2 left-2 px-2 py-0.5 text-[10px] font-medium rounded-md bg-black/40 backdrop-blur-sm text-zinc-400 border border-white/[0.06]">
+                ${sim.category}
+              </div>
+              <!-- Equation badge -->
+              <div class="absolute bottom-2 right-2 px-2 py-0.5 text-[10px] rounded-md bg-black/40 backdrop-blur-sm text-zinc-500 border border-white/[0.06] font-mono">
+                ${sim.equation}
+              </div>
+            </div>
+
+            <!-- Content -->
+            <div class="relative p-5 pt-4">
+              <div class="flex items-center gap-3 mb-3">
+                <div class="text-zinc-400 group-hover:text-zinc-200 transition-colors">
+                  ${sim.icon}
+                </div>
+                <div>
+                  <h3 class="text-base font-semibold text-zinc-100 group-hover:text-white transition-colors leading-tight">
+                    ${sim.name}
+                  </h3>
+                  <p class="text-[11px] text-zinc-500 group-hover:text-zinc-400 transition-colors mt-0.5">
+                    ${sim.tagline}
+                  </p>
+                </div>
+              </div>
+
+              <p class="text-xs text-zinc-600 leading-relaxed line-clamp-3">
+                ${sim.detail}
+              </p>
+
+              <!-- Launch bar -->
+              <div class="mt-4 pt-3 border-t border-white/[0.04] flex items-center justify-between">
+                <span class="text-xs font-medium bg-gradient-to-r ${sim.gradient} bg-clip-text text-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  Open simulation
+                </span>
+                <div class="w-7 h-7 rounded-lg bg-white/[0.04] group-hover:bg-white/[0.08] flex items-center justify-center transition-all duration-300 group-hover:translate-x-0.5">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" class="text-zinc-500 group-hover:text-zinc-300 transition-colors">
+                    <path d="M5 3l4 4-4 4"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </a>
+        `
+        ).join("")}
       </div>
     </div>
   `;
+
+  // Scroll animations
+  setupScrollAnimations(scrollRoot, ".sim-card");
 }

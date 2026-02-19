@@ -35,12 +35,30 @@ export class Router {
     }
 
     window.history.pushState({}, "", path);
-    await this.resolve(path);
+
+    // Split path into pathname + hash
+    const [pathname, hash] = path.split("#");
+    await this.resolve(pathname || "/");
+
+    // Scroll to hash element after route resolves
+    if (hash) {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const target = document.getElementById(hash);
+          if (target) {
+            target.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }, 100);
+      });
+    }
   }
 
   private async resolve(path: string): Promise<void> {
+    // Strip hash before matching
+    const pathname = path.split("#")[0] || "/";
+
     for (const route of this.routes) {
-      const match = path.match(route.pattern);
+      const match = pathname.match(route.pattern);
       if (match) {
         const params: Record<string, string> = {};
         route.keys.forEach((key, i) => {
@@ -75,7 +93,19 @@ export class Router {
 
     // Handle popstate
     window.addEventListener("popstate", () => {
-      this.resolve(window.location.pathname);
+      const hash = window.location.hash?.slice(1);
+      this.resolve(window.location.pathname).then(() => {
+        if (hash) {
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              const target = document.getElementById(hash);
+              if (target) {
+                target.scrollIntoView({ behavior: "smooth", block: "start" });
+              }
+            }, 100);
+          });
+        }
+      });
     });
 
     // Delegate link clicks
@@ -88,8 +118,20 @@ export class Router {
       }
     });
 
-    // Resolve initial route
-    this.resolve(window.location.pathname);
+    // Resolve initial route (handle hash on page load)
+    const hash = window.location.hash?.slice(1);
+    this.resolve(window.location.pathname).then(() => {
+      if (hash) {
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            const target = document.getElementById(hash);
+            if (target) {
+              target.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          }, 100);
+        });
+      }
+    });
   }
 
   setCleanup(fn: () => void): void {
