@@ -10,6 +10,12 @@ export default defineConfig({
     outDir: "../dist",
     emptyOutDir: true,
     rollupOptions: {
+      external: [
+        "@tauri-apps/plugin-dialog",
+        "@tauri-apps/plugin-fs",
+        "@tauri-apps/api/core",
+        "@tauri-apps/api/event",
+      ],
       output: {
         manualChunks: {
           three: ["three"],

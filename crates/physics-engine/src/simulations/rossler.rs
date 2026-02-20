@@ -18,6 +18,55 @@ pub struct RosslerState {
     pub a: f64,
     pub b: f64,
     pub c: f64,
+    pub lyapunov_exponent: f64,
+}
+
+/// Tracks the maximal Lyapunov exponent via a shadow trajectory.
+struct LyapunovTracker {
+    shadow: [f64; 3],
+    sum_log: f64,
+    count: u64,
+    perturbation: f64,
+}
+
+impl LyapunovTracker {
+    fn new(initial: [f64; 3], perturbation: f64) -> Self {
+        Self {
+            shadow: [
+                initial[0] + perturbation,
+                initial[1],
+                initial[2],
+            ],
+            sum_log: 0.0,
+            count: 0,
+            perturbation,
+        }
+    }
+
+    fn update(&mut self, reference: &[f64; 3], dt: f64) {
+        let dx = self.shadow[0] - reference[0];
+        let dy = self.shadow[1] - reference[1];
+        let dz = self.shadow[2] - reference[2];
+        let dist = (dx * dx + dy * dy + dz * dz).sqrt();
+
+        if dist > 1e-15 {
+            self.sum_log += (dist / self.perturbation).ln();
+            self.count += 1;
+
+            let scale = self.perturbation / dist;
+            self.shadow[0] = reference[0] + dx * scale;
+            self.shadow[1] = reference[1] + dy * scale;
+            self.shadow[2] = reference[2] + dz * scale;
+        }
+        let _ = dt;
+    }
+
+    fn exponent(&self, dt: f64) -> f64 {
+        if self.count == 0 {
+            return 0.0;
+        }
+        self.sum_log / (self.count as f64 * dt)
+    }
 }
 
 pub struct RosslerSimulator {
@@ -29,6 +78,7 @@ pub struct RosslerSimulator {
     pub steps: u64,
     pub trajectories: Vec<Trajectory>,
     initial_trajectories: Vec<Trajectory>,
+    lyapunov: Option<LyapunovTracker>,
 }
 
 impl RosslerSimulator {
@@ -42,6 +92,7 @@ impl RosslerSimulator {
             steps: 0,
             trajectories: Vec::new(),
             initial_trajectories: Vec::new(),
+            lyapunov: None,
         }
     }
 
@@ -50,6 +101,11 @@ impl RosslerSimulator {
         self.initial_trajectories = trajectories;
         self.time = 0.0;
         self.steps = 0;
+        self.lyapunov = if !self.trajectories.is_empty() {
+            Some(LyapunovTracker::new(self.trajectories[0].state, 1e-8))
+        } else {
+            None
+        };
     }
 
     /// dx/dt = -y - z, dy/dt = x + ay, dz/dt = b + z(x - c)
@@ -100,6 +156,14 @@ impl RosslerSimulator {
                 let state = self.trajectories[i].state;
                 self.trajectories[i].state = self.rk4_step(&state);
             }
+            if self.lyapunov.is_some() && !self.trajectories.is_empty() {
+                let shadow = self.lyapunov.as_ref().unwrap().shadow;
+                let new_shadow = self.rk4_step(&shadow);
+                let ref_state = self.trajectories[0].state;
+                let lyap = self.lyapunov.as_mut().unwrap();
+                lyap.shadow = new_shadow;
+                lyap.update(&ref_state, self.dt);
+            }
             self.time += self.dt;
             self.steps += 1;
         }
@@ -145,6 +209,11 @@ impl RosslerSimulator {
         self.trajectories = self.initial_trajectories.clone();
         self.time = 0.0;
         self.steps = 0;
+        self.lyapunov = if !self.trajectories.is_empty() {
+            Some(LyapunovTracker::new(self.trajectories[0].state, 1e-8))
+        } else {
+            None
+        };
     }
 
     pub fn get_state(&self) -> RosslerState {
@@ -157,6 +226,7 @@ impl RosslerSimulator {
             a: self.a,
             b: self.b,
             c: self.c,
+            lyapunov_exponent: self.lyapunov.as_ref().map_or(0.0, |l| l.exponent(self.dt)),
         }
     }
 

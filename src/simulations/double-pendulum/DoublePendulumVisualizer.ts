@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import type { SimulationVisualizer } from "../SimulationManager";
+import { createTrailMaterial, updateTrailAlpha } from "../../utils/trail-shader";
 
 interface PendulumState {
   theta1: number;
@@ -134,14 +135,9 @@ export class DoublePendulumVisualizer implements SimulationVisualizer {
     }, { passive: false });
   }
 
-  private createRod(
-    from: THREE.Vector3,
-    to: THREE.Vector3,
-    color: number
-  ): THREE.Mesh {
-    const dir = new THREE.Vector3().subVectors(to, from);
-    const len = dir.length();
-    const geo = new THREE.CylinderGeometry(0.015, 0.015, len, 8);
+  private createRod(color: number): THREE.Mesh {
+    // Create unit-length rod; will be scaled/positioned in updateRod()
+    const geo = new THREE.CylinderGeometry(0.015, 0.015, 1, 8);
     const mat = new THREE.MeshStandardMaterial({
       color,
       emissive: new THREE.Color(color),
@@ -149,12 +145,17 @@ export class DoublePendulumVisualizer implements SimulationVisualizer {
       transparent: true,
       opacity: 0.7,
     });
-    const rod = new THREE.Mesh(geo, mat);
+    return new THREE.Mesh(geo, mat);
+  }
+
+  private updateRod(rod: THREE.Mesh, from: THREE.Vector3, to: THREE.Vector3): void {
+    const dir = new THREE.Vector3().subVectors(to, from);
+    const len = dir.length();
+    rod.scale.set(1, len, 1);
     const mid = new THREE.Vector3().addVectors(from, to).multiplyScalar(0.5);
     rod.position.copy(mid);
     rod.lookAt(to);
     rod.rotateX(Math.PI / 2);
-    return rod;
   }
 
   private ensurePendulums(pendulums: PendulumState[]): void {
@@ -195,24 +196,26 @@ export class DoublePendulumVisualizer implements SimulationVisualizer {
       const bob2 = new THREE.Mesh(bobGeo, bob2Mat);
       this.scene.add(bob2);
 
-      // Trail for bob2 (tip)
+      // Trail for bob2 (tip) with fade-out shader
       const posArr = new Float32Array(TRAIL_LENGTH * 3);
       const trailGeo = new THREE.BufferGeometry();
       trailGeo.setAttribute("position", new THREE.BufferAttribute(posArr, 3));
+      trailGeo.setAttribute("alpha", new THREE.BufferAttribute(new Float32Array(TRAIL_LENGTH), 1));
       trailGeo.setDrawRange(0, 0);
-      const trailMat = new THREE.LineBasicMaterial({
-        color: p.color,
-        transparent: true,
-        opacity: 0.5,
-      });
+      const trailMat = createTrailMaterial(p.color);
       const line = new THREE.Line(trailGeo, trailMat);
       this.scene.add(line);
+
+      const rod1 = this.createRod(p.color);
+      this.scene.add(rod1);
+      const rod2 = this.createRod(p.color);
+      this.scene.add(rod2);
 
       this.pendulumVisuals.push({
         bob1,
         bob2,
-        rod1: null,
-        rod2: null,
+        rod1,
+        rod2,
         trail: {
           positions: [],
           geometry: trailGeo,
@@ -239,21 +242,9 @@ export class DoublePendulumVisualizer implements SimulationVisualizer {
       pv.bob1.position.copy(p1);
       pv.bob2.position.copy(p2);
 
-      // Update rods
-      if (pv.rod1) {
-        this.scene.remove(pv.rod1);
-        pv.rod1.geometry.dispose();
-        (pv.rod1.material as THREE.Material).dispose();
-      }
-      if (pv.rod2) {
-        this.scene.remove(pv.rod2);
-        pv.rod2.geometry.dispose();
-        (pv.rod2.material as THREE.Material).dispose();
-      }
-      pv.rod1 = this.createRod(new THREE.Vector3(0, 0, 0), p1, p.color);
-      pv.rod2 = this.createRod(p1, p2, p.color);
-      this.scene.add(pv.rod1);
-      this.scene.add(pv.rod2);
+      // Update rod transforms (reuse existing meshes)
+      if (pv.rod1) this.updateRod(pv.rod1, new THREE.Vector3(0, 0, 0), p1);
+      if (pv.rod2) this.updateRod(pv.rod2, p1, p2);
 
       // Trail (bob2)
       const trail = pv.trail;
@@ -266,6 +257,7 @@ export class DoublePendulumVisualizer implements SimulationVisualizer {
         trail.positionArray[j * 3 + 2] = tp.z;
       }
       trail.geometry.attributes.position.needsUpdate = true;
+      updateTrailAlpha(trail.geometry, trail.positions.length, TRAIL_LENGTH);
       trail.geometry.setDrawRange(0, trail.positions.length);
     }
   }

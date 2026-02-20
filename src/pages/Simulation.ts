@@ -8,6 +8,9 @@ import { ChatPanel } from "../components/ChatPanel";
 import { MetricsPanel } from "../components/MetricsPanel";
 import { SimInfoPanel } from "../components/SimInfoPanel";
 import { MODELS } from "../ai/registry";
+import { showToast } from "../components/Toast";
+import { KeyboardShortcuts } from "../components/KeyboardShortcuts";
+import { exportState, takeScreenshot } from "../services/ExportService";
 
 const SIM_NAMES: Record<string, string> = {
   "three-body": "Three-Body Problem",
@@ -195,10 +198,20 @@ export async function renderSimulation(
   const defaultModel = MODELS.find((m) => m.id === "claude-sonnet-4-6") || MODELS[0];
   const chatPanel = new ChatPanel(tabChat, defaultModel);
   chatPanel.setSimulation(simType);
+  chatPanel.setStateGetter(() => manager.getLastState());
+  chatPanel.setOnApplyParams((params) => {
+    paramPanel.applyValues(params);
+    showToast("Parameters applied from AI recommendation", "success");
+  });
   chatPanel.render();
 
   const metricsPanel = new MetricsPanel(tabMetrics);
   metricsPanel.render();
+
+  // Wire up error handler
+  manager.setOnError((error) => {
+    showToast(error.message, "error");
+  });
 
   // Wire up state updates to metrics
   manager.setOnStateUpdate((state) => {
@@ -307,21 +320,92 @@ export async function renderSimulation(
   const fpsId = requestAnimationFrame(fpsLoop);
 
   // --- Keyboard shortcuts ---
-  const keyHandler = (e: KeyboardEvent) => {
-    const target = e.target as HTMLElement;
-    if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
-    switch (e.key) {
-      case " ":
-        e.preventDefault();
-        btnPlay.click();
-        break;
-      case "r":
-      case "R":
-        btnReset.click();
-        break;
-    }
-  };
-  document.addEventListener("keydown", keyHandler);
+  const shortcuts = new KeyboardShortcuts();
+  shortcuts.register([
+    { key: " ", description: "Play / Pause", handler: () => btnPlay.click() },
+    { key: ".", description: "Step forward", handler: () => btnStep.click() },
+    { key: "r", description: "Reset simulation", handler: () => btnReset.click() },
+    {
+      key: "e",
+      description: "Export state",
+      handler: () => {
+        const state = manager.getLastState();
+        if (state) exportState(type, state);
+      },
+    },
+    {
+      key: "s",
+      description: "Screenshot",
+      modifier: "shift",
+      handler: () => {
+        const canvas = manager.getCanvas();
+        if (canvas) takeScreenshot(canvas);
+      },
+    },
+    {
+      key: "1",
+      description: "Parameters tab",
+      handler: () => {
+        tabBtns.forEach((b) => b.classList.remove("active"));
+        Object.values(tabPanels).forEach((p) => p.classList.add("hidden"));
+        container.querySelector('[data-tab="params"]')?.classList.add("active");
+        tabPanels.params?.classList.remove("hidden");
+      },
+    },
+    {
+      key: "2",
+      description: "AI Chat tab",
+      handler: () => {
+        tabBtns.forEach((b) => b.classList.remove("active"));
+        Object.values(tabPanels).forEach((p) => p.classList.add("hidden"));
+        container.querySelector('[data-tab="chat"]')?.classList.add("active");
+        tabPanels.chat?.classList.remove("hidden");
+      },
+    },
+    {
+      key: "3",
+      description: "Metrics tab",
+      handler: () => {
+        tabBtns.forEach((b) => b.classList.remove("active"));
+        Object.values(tabPanels).forEach((p) => p.classList.add("hidden"));
+        container.querySelector('[data-tab="metrics"]')?.classList.add("active");
+        tabPanels.metrics?.classList.remove("hidden");
+      },
+    },
+  ]);
+  shortcuts.attach();
+
+  // --- Tauri menu events ---
+  if (typeof window !== "undefined" && "__TAURI__" in window) {
+    import("@tauri-apps/api/event").then(({ listen }) => {
+      listen<string>("menu-event", (event) => {
+        switch (event.payload) {
+          case "play_pause": btnPlay.click(); break;
+          case "step_forward": btnStep.click(); break;
+          case "reset_sim": btnReset.click(); break;
+          case "export": {
+            const state = manager.getLastState();
+            if (state) exportState(type, state);
+            break;
+          }
+          case "import": {
+            import("../services/ExportService").then(({ importState: doImport }) => {
+              doImport().then((data) => {
+                if (data) showToast(`Imported ${data.simulationType} state`, "success");
+              });
+            });
+            break;
+          }
+          case "screenshot": {
+            const canvas = manager.getCanvas();
+            if (canvas) takeScreenshot(canvas);
+            break;
+          }
+          case "shortcuts": shortcuts.toggleHelp(); break;
+        }
+      });
+    }).catch(() => {});
+  }
 
   // --- Start simulation ---
   manager.start();
@@ -330,7 +414,7 @@ export async function renderSimulation(
 
   // Cleanup on route change
   router.setCleanup(() => {
-    document.removeEventListener("keydown", keyHandler);
+    shortcuts.destroy();
     cancelAnimationFrame(fpsId);
     resizeObserver.disconnect();
     manager.dispose();

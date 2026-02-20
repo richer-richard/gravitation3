@@ -14,6 +14,9 @@ export interface ChatState {
   isStreaming: boolean;
 }
 
+const MAX_PERSISTED_MESSAGES = 50;
+const STORAGE_PREFIX = "chat_history_";
+
 export class ChatManager {
   private messages: ChatMessage[] = [];
   private model: AIModel;
@@ -32,6 +35,30 @@ export class ChatManager {
 
   setSimulation(sim: SimulationType | null): void {
     this.simulation = sim;
+    this.loadFromStorage();
+  }
+
+  saveToStorage(): void {
+    if (!this.simulation) return;
+    try {
+      const key = `${STORAGE_PREFIX}${this.simulation}`;
+      const toSave = this.messages
+        .filter((m) => m.role !== "system")
+        .slice(-MAX_PERSISTED_MESSAGES);
+      localStorage.setItem(key, JSON.stringify(toSave));
+    } catch { /* quota exceeded or similar */ }
+  }
+
+  loadFromStorage(): void {
+    if (!this.simulation) return;
+    try {
+      const key = `${STORAGE_PREFIX}${this.simulation}`;
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        this.messages = JSON.parse(raw) as ChatMessage[];
+        this.notify();
+      }
+    } catch { /* ignore corrupt data */ }
   }
 
   setOnUpdate(cb: (state: ChatState) => void): void {
@@ -86,6 +113,7 @@ export class ChatManager {
     try {
       const response = await aiService.chat(this.model, allMessages, chatOptions);
       this.messages.push(response);
+      this.saveToStorage();
       this.notify();
     } catch (err) {
       const errorMsg: ChatMessage = {
@@ -94,6 +122,7 @@ export class ChatManager {
         timestamp: Date.now(),
       };
       this.messages.push(errorMsg);
+      this.saveToStorage();
       this.notify();
     }
   }
@@ -148,6 +177,7 @@ export class ChatManager {
         timestamp: Date.now(),
       };
       this.messages.push(assistantMsg);
+      this.saveToStorage();
     } catch (err) {
       const errorMsg: ChatMessage = {
         role: "assistant",
@@ -155,6 +185,7 @@ export class ChatManager {
         timestamp: Date.now(),
       };
       this.messages.push(errorMsg);
+      this.saveToStorage();
     } finally {
       this.isStreaming = false;
       this.notify();

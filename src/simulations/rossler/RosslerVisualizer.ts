@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { SimulationVisualizer } from "../SimulationManager";
+import { createTrailMaterial, updateTrailAlpha } from "../../utils/trail-shader";
 
 interface Trajectory {
   state: number[];
@@ -141,13 +142,9 @@ export class RosslerVisualizer implements SimulationVisualizer {
       const posArr = new Float32Array(TRAIL_LENGTH * 3);
       const trailGeo = new THREE.BufferGeometry();
       trailGeo.setAttribute("position", new THREE.BufferAttribute(posArr, 3));
+      trailGeo.setAttribute("alpha", new THREE.BufferAttribute(new Float32Array(TRAIL_LENGTH), 1));
       trailGeo.setDrawRange(0, 0);
-      const trailMat = new THREE.LineBasicMaterial({
-        color: t.color,
-        transparent: true,
-        opacity: 0.7,
-        blending: THREE.AdditiveBlending,
-      });
+      const trailMat = createTrailMaterial(t.color);
       const line = new THREE.Line(trailGeo, trailMat);
       this.scene.add(line);
 
@@ -187,6 +184,7 @@ export class RosslerVisualizer implements SimulationVisualizer {
         trail.positionArray[j * 3 + 2] = p.z;
       }
       trail.geometry.attributes.position.needsUpdate = true;
+      updateTrailAlpha(trail.geometry, trail.positions.length, TRAIL_LENGTH);
       trail.geometry.setDrawRange(0, trail.positions.length);
     }
   }

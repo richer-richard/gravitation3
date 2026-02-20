@@ -5,7 +5,13 @@
 
 import type { SimulationType } from "../simulations/types";
 
-const BASE_PROMPT = `You are an AI physics assistant for Gravitation³, an interactive physics simulation platform. You help users understand the physics behind the simulations, explain chaotic dynamics, and provide educational insights. Use LaTeX notation ($...$ for inline, $$...$$ for display) for mathematical expressions. Be concise, educational, and engaging.`;
+const BASE_PROMPT = `You are an AI physics assistant for Gravitation³, an interactive physics simulation platform. You help users understand the physics behind the simulations, explain chaotic dynamics, and provide educational insights. Use LaTeX notation ($...$ for inline, $$...$$ for display) for mathematical expressions. Be concise, educational, and engaging.
+
+When the user asks you to suggest or recommend parameters (e.g. "more chaotic", "more stable", "interesting parameters"), include a \`\`\`parameters code block with a JSON object of parameter name-value pairs that can be applied directly. Example:
+\`\`\`parameters
+{"sigma": 10, "rho": 28, "beta": 2.667}
+\`\`\`
+Only include the parameters block when recommending concrete parameter changes.`;
 
 const PROMPTS: Record<SimulationType, string> = {
   "three-body": `${BASE_PROMPT}

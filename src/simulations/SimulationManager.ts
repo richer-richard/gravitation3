@@ -26,7 +26,10 @@ export class SimulationManager {
   private speed: SpeedMultiplier = 1;
   private stepsPerFrame = 1;
   private onStateUpdate: ((state: unknown) => void) | null = null;
+  private onError: ((error: Error) => void) | null = null;
   private lastState: unknown = null;
+  private consecutiveErrors = 0;
+  private static readonly MAX_CONSECUTIVE_ERRORS = 10;
 
   constructor() {
     this.bridge = getPhysicsBridge();
@@ -63,6 +66,10 @@ export class SimulationManager {
 
   setOnStateUpdate(cb: (state: unknown) => void): void {
     this.onStateUpdate = cb;
+  }
+
+  setOnError(cb: (error: Error) => void): void {
+    this.onError = cb;
   }
 
   start(): void {
@@ -158,11 +165,19 @@ export class SimulationManager {
     try {
       const steps = this.speed < 1 ? 1 : this.stepsPerFrame;
       const state = await this.bridge.step(steps);
+      this.consecutiveErrors = 0;
       this.lastState = state;
       this.visualizer?.update(state);
       this.onStateUpdate?.(state);
-    } catch {
-      // Physics step failed — keep running, skip frame
+    } catch (err) {
+      this.consecutiveErrors++;
+      const error = err instanceof Error ? err : new Error(String(err));
+      this.onError?.(error);
+      if (this.consecutiveErrors >= SimulationManager.MAX_CONSECUTIVE_ERRORS) {
+        this.stop();
+        this.onError?.(new Error(`Simulation stopped after ${this.consecutiveErrors} consecutive errors`));
+        return;
+      }
     }
     if (this.running) {
       this.animFrameId = requestAnimationFrame(this.tick);

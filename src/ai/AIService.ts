@@ -1,6 +1,18 @@
 import type { AIModel, ChatMessage, ChatOptions, StreamEvent } from "./types";
+import { IS_TAURI } from "../utils/tauri-bridge";
 
 const LLM_BASE = "http://localhost:5001";
+
+async function getApiKey(provider: string): Promise<string> {
+  if (IS_TAURI) {
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const key = await invoke("get_api_key", { provider }) as string;
+      if (key) return key;
+    } catch { /* fall through to localStorage */ }
+  }
+  return localStorage.getItem(`api_key_${provider}`) || "";
+}
 
 export class AIService {
   async chat(
@@ -8,7 +20,7 @@ export class AIService {
     messages: ChatMessage[],
     options?: ChatOptions
   ): Promise<ChatMessage> {
-    const apiKey = localStorage.getItem(`api_key_${model.provider}`) || "";
+    const apiKey = await getApiKey(model.provider);
     const response = await fetch(`${LLM_BASE}/api/chat`, {
       method: "POST",
       headers: {
@@ -45,7 +57,7 @@ export class AIService {
     messages: ChatMessage[],
     options?: ChatOptions
   ): AsyncGenerator<StreamEvent> {
-    const apiKey = localStorage.getItem(`api_key_${model.provider}`) || "";
+    const apiKey = await getApiKey(model.provider);
     const response = await fetch(`${LLM_BASE}/api/chat/stream`, {
       method: "POST",
       headers: {

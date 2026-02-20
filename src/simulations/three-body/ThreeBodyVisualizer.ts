@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { SimulationVisualizer } from "../SimulationManager";
+import { createTrailMaterial, updateTrailAlpha } from "../../utils/trail-shader";
 
 interface Body {
   position: number[];
@@ -190,20 +191,19 @@ export class ThreeBodyVisualizer implements SimulationVisualizer {
       mesh.add(glow);
       this.scene.add(mesh);
 
-      // Trail
+      // Trail with fade-out shader
       const posArr = new Float32Array(TRAIL_LENGTH * 3);
       const trailGeo = new THREE.BufferGeometry();
       trailGeo.setAttribute(
         "position",
         new THREE.BufferAttribute(posArr, 3)
       );
+      trailGeo.setAttribute(
+        "alpha",
+        new THREE.BufferAttribute(new Float32Array(TRAIL_LENGTH), 1)
+      );
       trailGeo.setDrawRange(0, 0);
-      const trailMat = new THREE.LineBasicMaterial({
-        color,
-        transparent: true,
-        opacity: 0.6,
-        blending: THREE.AdditiveBlending,
-      });
+      const trailMat = createTrailMaterial(color);
       const line = new THREE.Line(trailGeo, trailMat);
       this.scene.add(line);
 
@@ -260,6 +260,7 @@ export class ThreeBodyVisualizer implements SimulationVisualizer {
           trail.positionArray[j * 3 + 2] = p.z;
         }
         trail.geometry.attributes.position.needsUpdate = true;
+        updateTrailAlpha(trail.geometry, trail.positions.length, TRAIL_LENGTH);
         trail.geometry.setDrawRange(0, trail.positions.length);
         trail.line.visible = true;
       } else {

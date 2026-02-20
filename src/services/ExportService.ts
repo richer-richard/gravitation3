@@ -1,6 +1,9 @@
 /**
- * ExportService — handles export/import of simulation state as JSON.
+ * ExportService — handles export/import of simulation state.
+ * Uses native Tauri dialogs when available, falls back to browser APIs.
  */
+
+import { IS_TAURI } from "../utils/tauri-bridge";
 
 export interface ExportData {
   schemaVersion: string;
@@ -9,7 +12,7 @@ export interface ExportData {
   state: unknown;
 }
 
-export function exportState(simulationType: string, state: unknown): void {
+export async function exportState(simulationType: string, state: unknown): Promise<void> {
   const data: ExportData = {
     schemaVersion: "2.0.0",
     simulationType,
@@ -18,6 +21,22 @@ export function exportState(simulationType: string, state: unknown): void {
   };
 
   const json = JSON.stringify(data, null, 2);
+
+  if (IS_TAURI) {
+    try {
+      const { save } = await import("@tauri-apps/plugin-dialog");
+      const { writeTextFile } = await import("@tauri-apps/plugin-fs");
+      const path = await save({
+        defaultPath: `gravitation3-${simulationType}-${Date.now()}.json`,
+        filters: [{ name: "JSON", extensions: ["json"] }],
+      });
+      if (path) {
+        await writeTextFile(path, json);
+      }
+      return;
+    } catch { /* fall through to browser method */ }
+  }
+
   const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -28,6 +47,22 @@ export function exportState(simulationType: string, state: unknown): void {
 }
 
 export async function importState(): Promise<ExportData | null> {
+  if (IS_TAURI) {
+    try {
+      const { open } = await import("@tauri-apps/plugin-dialog");
+      const { readTextFile } = await import("@tauri-apps/plugin-fs");
+      const path = await open({
+        filters: [{ name: "JSON", extensions: ["json"] }],
+        multiple: false,
+      });
+      if (path && typeof path === "string") {
+        const text = await readTextFile(path);
+        return JSON.parse(text) as ExportData;
+      }
+      return null;
+    } catch { /* fall through */ }
+  }
+
   return new Promise((resolve) => {
     const input = document.createElement("input");
     input.type = "file";
@@ -50,7 +85,26 @@ export async function importState(): Promise<ExportData | null> {
   });
 }
 
-export function takeScreenshot(canvas: HTMLCanvasElement): void {
+export async function takeScreenshot(canvas: HTMLCanvasElement): Promise<void> {
+  if (IS_TAURI) {
+    try {
+      const { save } = await import("@tauri-apps/plugin-dialog");
+      const { writeBinaryFile } = await import("@tauri-apps/plugin-fs");
+      const path = await save({
+        defaultPath: `gravitation3-screenshot-${Date.now()}.png`,
+        filters: [{ name: "PNG Image", extensions: ["png"] }],
+      });
+      if (path) {
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+        if (blob) {
+          const buffer = await blob.arrayBuffer();
+          await writeBinaryFile(path, new Uint8Array(buffer));
+        }
+      }
+      return;
+    } catch { /* fall through */ }
+  }
+
   const url = canvas.toDataURL("image/png");
   const a = document.createElement("a");
   a.href = url;

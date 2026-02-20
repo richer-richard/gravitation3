@@ -1,5 +1,6 @@
 import type { Router } from "../router";
 import { createPageShell } from "../components/PageShell";
+import { IS_TAURI, tauriStoreApiKey, tauriHasApiKey } from "../utils/tauri-bridge";
 
 const PROVIDERS = [
   { id: "openai", name: "OpenAI", placeholder: "sk-...", color: "#10b981" },
@@ -20,14 +21,14 @@ export function renderSettings(container: HTMLElement, router: Router): void {
           Settings
         </h1>
         <p class="text-zinc-400 text-base max-w-md mx-auto leading-relaxed">
-          Configure API keys for AI-powered simulation analysis. Keys are stored in your browser only.
+          Configure API keys for AI-powered simulation analysis. ${IS_TAURI ? "Keys are stored securely in your OS keychain." : "Keys are stored in your browser only."}
         </p>
       </div>
 
       <!-- API Keys Section -->
       <section class="mb-12">
         <h2 class="section-title text-xl font-semibold text-zinc-100 mb-6">API Keys</h2>
-        <p class="text-zinc-500 text-sm mb-6">Keys are stored in localStorage and sent per-request. They are never persisted on any server.</p>
+        <p class="text-zinc-500 text-sm mb-6">${IS_TAURI ? "Keys are stored in your OS keychain (Keychain on macOS, Credential Manager on Windows)." : "Keys are stored in localStorage and sent per-request. They are never persisted on any server."}</p>
 
         <div class="space-y-4">
           ${PROVIDERS.map(
@@ -66,13 +67,24 @@ export function renderSettings(container: HTMLElement, router: Router): void {
     const input = document.getElementById(`key-${p.id}`) as HTMLInputElement;
     const status = document.getElementById(`status-${p.id}`)!;
     const dot = document.getElementById(`dot-${p.id}`)!;
-    const saved = localStorage.getItem(`api_key_${p.id}`);
 
-    if (saved) {
-      input.value = saved;
-      status.textContent = "Configured";
-      status.className = "text-xs text-emerald-500";
-      dot.style.opacity = "1";
+    if (IS_TAURI) {
+      tauriHasApiKey(p.id).then((has) => {
+        if (has) {
+          input.placeholder = "Key stored in keychain";
+          status.textContent = "Stored in keychain";
+          status.className = "text-xs text-emerald-500";
+          dot.style.opacity = "1";
+        }
+      }).catch(() => {});
+    } else {
+      const saved = localStorage.getItem(`api_key_${p.id}`);
+      if (saved) {
+        input.value = saved;
+        status.textContent = "Configured";
+        status.className = "text-xs text-emerald-500";
+        dot.style.opacity = "1";
+      }
     }
   }
 
@@ -85,16 +97,37 @@ export function renderSettings(container: HTMLElement, router: Router): void {
       const status = document.getElementById(`status-${saveId}`)!;
       const dot = document.getElementById(`dot-${saveId}`)!;
       const value = input.value.trim();
-      if (value) {
-        localStorage.setItem(`api_key_${saveId}`, value);
-        status.textContent = "Configured";
-        status.className = "text-xs text-emerald-500";
-        dot.style.opacity = "1";
+
+      if (IS_TAURI) {
+        tauriStoreApiKey(saveId, value).then(() => {
+          if (value) {
+            input.value = "";
+            input.placeholder = "Key stored in keychain";
+            status.textContent = "Stored in keychain";
+            status.className = "text-xs text-emerald-500";
+            dot.style.opacity = "1";
+          } else {
+            input.placeholder = PROVIDERS.find((p) => p.id === saveId)?.placeholder || "";
+            status.textContent = "Not configured";
+            status.className = "text-xs text-zinc-500";
+            dot.style.opacity = "0.3";
+          }
+        }).catch((err) => {
+          status.textContent = `Error: ${err}`;
+          status.className = "text-xs text-red-500";
+        });
       } else {
-        localStorage.removeItem(`api_key_${saveId}`);
-        status.textContent = "Not configured";
-        status.className = "text-xs text-zinc-500";
-        dot.style.opacity = "0.3";
+        if (value) {
+          localStorage.setItem(`api_key_${saveId}`, value);
+          status.textContent = "Configured";
+          status.className = "text-xs text-emerald-500";
+          dot.style.opacity = "1";
+        } else {
+          localStorage.removeItem(`api_key_${saveId}`);
+          status.textContent = "Not configured";
+          status.className = "text-xs text-zinc-500";
+          dot.style.opacity = "0.3";
+        }
       }
     }
 

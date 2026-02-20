@@ -20,10 +20,22 @@ export class ChatPanel {
   private streamingContent = "";
   private streamingThinking = "";
   private streamingEl: HTMLElement | null = null;
+  private tokenUsage = { input: 0, output: 0 };
+  private tokenEl: HTMLElement | null = null;
+  private stateGetter: (() => unknown) | null = null;
+  private onApplyParams: ((params: Record<string, number>) => void) | null = null;
 
   constructor(container: HTMLElement, model: AIModel) {
     this.container = container;
     this.chatManager = new ChatManager(model);
+  }
+
+  setStateGetter(getter: () => unknown): void {
+    this.stateGetter = getter;
+  }
+
+  setOnApplyParams(cb: (params: Record<string, number>) => void): void {
+    this.onApplyParams = cb;
   }
 
   setSimulation(sim: SimulationType): void {
@@ -43,6 +55,7 @@ export class ChatPanel {
           </label>
         </div>
         <div class="chat-messages flex-1 overflow-y-auto p-3 space-y-3"></div>
+        <div class="chat-token-usage px-3 py-1 text-[10px] text-zinc-600 font-mono border-t border-zinc-700/50 hidden"></div>
         <div class="p-2 border-t border-zinc-700">
           <div class="flex gap-2">
             <textarea class="chat-input flex-1 bg-zinc-800 text-zinc-200 text-sm rounded-lg px-3 py-2 border border-zinc-600 resize-none focus:outline-none focus:border-blue-500" rows="2" placeholder="Ask about the simulation..."></textarea>
@@ -57,6 +70,7 @@ export class ChatPanel {
     this.sendBtn = this.container.querySelector(".chat-send")!;
     this.modelSelect = this.container.querySelector(".chat-model-select")!;
     this.thinkingToggle = this.container.querySelector(".chat-thinking-toggle")!;
+    this.tokenEl = this.container.querySelector(".chat-token-usage")!;
 
     this.sendBtn.addEventListener("click", () => this.handleSend());
     this.input.addEventListener("keydown", (e) => {
@@ -81,6 +95,17 @@ export class ChatPanel {
     if (initModel) {
       this.thinkingToggle.parentElement!.style.display =
         initModel.capabilities.includes("thinking") ? "flex" : "none";
+    }
+
+    // Render persisted messages
+    this.renderPersistedMessages();
+  }
+
+  private renderPersistedMessages(): void {
+    const messages = this.chatManager.getMessages();
+    for (const msg of messages) {
+      if (msg.role === "system") continue;
+      this.appendMessage(msg.role, msg.content, msg.thinking);
     }
   }
 
@@ -116,8 +141,10 @@ export class ChatPanel {
     this.streamingEl = this.createStreamingMessage();
 
     try {
+      const simState = this.stateGetter?.();
       const generator = this.chatManager.sendMessageStream(content, {
         thinking: this.thinkingToggle.checked,
+        simulationState: simState,
       });
 
       for await (const event of generator) {
@@ -145,6 +172,10 @@ export class ChatPanel {
     } else if (event.type === "content" && event.content) {
       this.streamingContent += event.content;
       this.updateStreamingMessage();
+    } else if (event.type === "done" && event.usage) {
+      this.tokenUsage.input += event.usage.input_tokens;
+      this.tokenUsage.output += event.usage.output_tokens;
+      this.updateTokenDisplay();
     } else if (event.type === "error" && event.message) {
       this.streamingContent += `\n\n**Error:** ${event.message}`;
       this.updateStreamingMessage();
@@ -227,11 +258,44 @@ export class ChatPanel {
     this.messageList.scrollTop = this.messageList.scrollHeight;
   }
 
+  private updateTokenDisplay(): void {
+    if (!this.tokenEl) return;
+    if (this.tokenUsage.input > 0 || this.tokenUsage.output > 0) {
+      this.tokenEl.classList.remove("hidden");
+      this.tokenEl.textContent = `Tokens: ${this.tokenUsage.input.toLocaleString()} in / ${this.tokenUsage.output.toLocaleString()} out`;
+    }
+  }
+
   private finalizeStreamingMessage(): void {
     if (!this.streamingEl) return;
     const bubble = this.streamingEl.querySelector(".streaming");
     if (bubble) bubble.classList.remove("streaming");
+
+    // Detect parameter blocks in response and add "Apply" button
+    this.detectParameterBlocks(this.streamingEl, this.streamingContent);
+
     this.streamingEl = null;
+  }
+
+  private detectParameterBlocks(el: HTMLElement, content: string): void {
+    // Look for ```parameters code blocks
+    const match = content.match(/```parameters\s*\n([\s\S]*?)```/);
+    if (!match || !this.onApplyParams) return;
+
+    try {
+      const params = JSON.parse(match[1]) as Record<string, number>;
+      const btn = document.createElement("button");
+      btn.className = "mt-2 px-3 py-1 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 text-xs rounded transition-colors";
+      btn.textContent = "Apply Parameters";
+      btn.addEventListener("click", () => {
+        this.onApplyParams?.(params);
+        btn.textContent = "Applied!";
+        btn.disabled = true;
+        btn.className = "mt-2 px-3 py-1 bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 text-xs rounded opacity-60";
+      });
+      const bubble = el.querySelector(".content-section") || el.querySelector("div > div");
+      bubble?.appendChild(btn);
+    } catch { /* not valid JSON */ }
   }
 
   destroy(): void {

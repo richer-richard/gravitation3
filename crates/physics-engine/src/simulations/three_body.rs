@@ -17,6 +17,7 @@ pub struct ThreeBodyState {
     pub time: f64,
     pub steps: u64,
     pub energy: f64,
+    pub energy_drift_pct: f64,
     pub entropy: f64,
     pub momentum: [f64; 3],
     pub min_distance: f64,
@@ -253,6 +254,7 @@ impl ThreeBodySimulator {
     }
 
     pub fn step(&mut self, n_steps: u32) -> bool {
+        self.recent_collisions.clear();
         for _ in 0..n_steps {
             if !self.rk4_step() {
                 return false;
@@ -348,6 +350,7 @@ impl ThreeBodySimulator {
             time: self.time,
             steps: self.steps,
             energy: self.calculate_total_energy(),
+            energy_drift_pct: self.get_energy_drift(),
             entropy: self.calculate_entropy(),
             momentum: [momentum.x, momentum.y, momentum.z],
             min_distance: self.get_min_distance(),
