@@ -4,6 +4,8 @@
   "version": "2.0.0",
   "identifier": "com.gravitation3.desktop",
   "build": {
+    "beforeDevCommand": "npx vite dev --port 3000",
+    "beforeBuildCommand": "npx vite build",
     "frontendDist": "../dist",
     "devUrl": "http://localhost:3000"
   },
