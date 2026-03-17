@@ -4,7 +4,8 @@ export type SimulationType =
   | "lorenz"
   | "rossler"
   | "double-gyre"
-  | "malkus-waterwheel";
+  | "malkus-waterwheel"
+  | "lid-driven-cavity";
 
 export interface SimulationMeta {
   id: SimulationType;
@@ -49,6 +50,13 @@ export const SIMULATION_LIST: SimulationMeta[] = [
     description: "Oceanic flow patterns",
     category: "Fluid",
     icon: "\u2248",
+  },
+  {
+    id: "lid-driven-cavity",
+    name: "Lid-Driven Cavity",
+    description: "Benchmark CFD recirculation cell",
+    category: "Fluid",
+    icon: "\u25A3",
   },
   {
     id: "malkus-waterwheel",

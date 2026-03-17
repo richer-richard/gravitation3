@@ -1,8 +1,8 @@
 // Gravitation3 — Tauri desktop application with native IPC, embedded server, and menu.
 
 use physics_engine::simulations::{
-    DoubleGyreSimulator, DoublePendulumSimulator, LorenzSimulator, MalkusWheelSimulator,
-    RosslerSimulator, Simulator, ThreeBodySimulator,
+    DoubleGyreSimulator, DoublePendulumSimulator, LidDrivenCavitySimulator, LorenzSimulator,
+    MalkusWheelSimulator, RosslerSimulator, Simulator, ThreeBodySimulator,
 };
 use serde_json::Value;
 use std::collections::HashMap;
@@ -33,6 +33,7 @@ impl SimulatorManager {
                 "lorenz" => Box::new(LorenzSimulator::new(10.0, 28.0, 8.0 / 3.0, 0.005)),
                 "rossler" => Box::new(RosslerSimulator::new(0.2, 0.2, 5.7, 0.01)),
                 "double-gyre" => Box::new(DoubleGyreSimulator::new(0.1, 0.25, 6.283, 0.01)),
+                "lid-driven-cavity" => Box::new(LidDrivenCavitySimulator::new()),
                 "malkus-waterwheel" => Box::new(MalkusWheelSimulator::new(8, 5.0, 1.0, 0.5, 0.01)),
                 _ => return Err(format!("Unknown simulation: {}", sim)),
             };
@@ -45,6 +46,11 @@ impl SimulatorManager {
 // ---------------------------------------------------------------------------
 // Tauri IPC Commands
 // ---------------------------------------------------------------------------
+
+#[tauri::command]
+fn create_simulator(state: tauri::State<'_, SimulatorManager>, sim: String) -> Result<(), String> {
+    state.get_or_create(&sim)
+}
 
 #[tauri::command]
 fn physics_step(
@@ -63,30 +69,12 @@ fn physics_step(
 fn load_preset(
     state: tauri::State<'_, SimulatorManager>,
     sim: String,
-    _preset: String,
+    preset: String,
 ) -> Result<Value, String> {
     state.get_or_create(&sim)?;
     let mut map = state.sims.lock().map_err(|e| e.to_string())?;
     let simulator = map.get_mut(&sim).ok_or("Simulator not found")?;
-    simulator.reset();
-    // Load preset by setting parameter "__preset"
-    // The simulators handle this via set_parameter or we re-create
-    drop(map);
-
-    // Re-create with preset: remove old, create new, load preset
-    let mut map = state.sims.lock().map_err(|e| e.to_string())?;
-    map.remove(&sim);
-    drop(map);
-    state.get_or_create(&sim)?;
-    let mut map = state.sims.lock().map_err(|e| e.to_string())?;
-    let simulator = map.get_mut(&sim).ok_or("Simulator not found")?;
-
-    // Use the Simulator trait's set_parameter to load preset by name
-    simulator.set_parameter("__preset", 0.0);
-    // Actually, presets aren't accessible via set_parameter. We need to use
-    // the concrete type's load_preset method. Since the trait doesn't expose it,
-    // we'll use a workaround: reset and return state.
-    simulator.reset();
+    simulator.load_preset(&preset);
     Ok(simulator.get_state())
 }
 
@@ -105,14 +93,95 @@ fn set_parameter(
 }
 
 #[tauri::command]
-fn get_state(
-    state: tauri::State<'_, SimulatorManager>,
-    sim: String,
-) -> Result<Value, String> {
+fn get_state(state: tauri::State<'_, SimulatorManager>, sim: String) -> Result<Value, String> {
     state.get_or_create(&sim)?;
     let map = state.sims.lock().map_err(|e| e.to_string())?;
     let simulator = map.get(&sim).ok_or("Simulator not found")?;
     Ok(simulator.get_state())
+}
+
+#[tauri::command]
+fn reset_simulation(
+    state: tauri::State<'_, SimulatorManager>,
+    sim: String,
+    preset: Option<String>,
+) -> Result<Value, String> {
+    state.get_or_create(&sim)?;
+    let mut map = state.sims.lock().map_err(|e| e.to_string())?;
+    let simulator = map.get_mut(&sim).ok_or("Simulator not found")?;
+    if let Some(preset) = preset {
+        simulator.load_preset(&preset);
+    } else {
+        simulator.reset();
+    }
+    Ok(simulator.get_state())
+}
+
+#[tauri::command]
+fn get_collisions(state: tauri::State<'_, SimulatorManager>, sim: String) -> Result<Value, String> {
+    state.get_or_create(&sim)?;
+    let map = state.sims.lock().map_err(|e| e.to_string())?;
+    let simulator = map.get(&sim).ok_or("Simulator not found")?;
+    simulator.get_collisions()
+}
+
+#[tauri::command]
+fn seed_particles(
+    state: tauri::State<'_, SimulatorManager>,
+    sim: String,
+    count: usize,
+) -> Result<Value, String> {
+    state.get_or_create(&sim)?;
+    let mut map = state.sims.lock().map_err(|e| e.to_string())?;
+    let simulator = map.get_mut(&sim).ok_or("Simulator not found")?;
+    simulator.seed_particles(count)
+}
+
+#[tauri::command]
+fn add_pendulum(
+    state: tauri::State<'_, SimulatorManager>,
+    sim: String,
+    theta1: f64,
+    omega1: f64,
+    theta2: f64,
+    omega2: f64,
+) -> Result<Value, String> {
+    state.get_or_create(&sim)?;
+    let mut map = state.sims.lock().map_err(|e| e.to_string())?;
+    let simulator = map.get_mut(&sim).ok_or("Simulator not found")?;
+    simulator.add_pendulum(theta1, omega1, theta2, omega2)
+}
+
+#[tauri::command]
+fn remove_pendulum(
+    state: tauri::State<'_, SimulatorManager>,
+    sim: String,
+    index: usize,
+) -> Result<Value, String> {
+    state.get_or_create(&sim)?;
+    let mut map = state.sims.lock().map_err(|e| e.to_string())?;
+    let simulator = map.get_mut(&sim).ok_or("Simulator not found")?;
+    simulator.remove_pendulum(index)
+}
+
+#[tauri::command]
+fn add_body(state: tauri::State<'_, SimulatorManager>, sim: String) -> Result<Value, String> {
+    state.get_or_create(&sim)?;
+    let mut map = state.sims.lock().map_err(|e| e.to_string())?;
+    let simulator = map.get_mut(&sim).ok_or("Simulator not found")?;
+    simulator.add_body()
+}
+
+#[tauri::command]
+fn remove_body(
+    state: tauri::State<'_, SimulatorManager>,
+    sim: String,
+    index: usize,
+) -> Result<Value, String> {
+    state.get_or_create(&sim)?;
+    let mut map = state.sims.lock().map_err(|e| e.to_string())?;
+    let simulator = map.get_mut(&sim).ok_or("Simulator not found")?;
+    simulator.remove_body(index)
 }
 
 #[tauri::command]
@@ -151,11 +220,42 @@ fn get_api_key(provider: String) -> Result<String, String> {
 // ---------------------------------------------------------------------------
 
 fn build_menu(app: &tauri::AppHandle) -> Result<Menu<tauri::Wry>, tauri::Error> {
-    let file_menu = SubmenuBuilder::new(app, "File")
-        .item(&MenuItem::with_id(app, "export", "Export State...", true, Some("CmdOrCtrl+E"))?)
-        .item(&MenuItem::with_id(app, "import", "Import State...", true, Some("CmdOrCtrl+I"))?)
+    #[cfg(target_os = "macos")]
+    let app_menu = SubmenuBuilder::new(app, "Gravitation3")
+        .about(None)
         .separator()
-        .item(&MenuItem::with_id(app, "screenshot", "Screenshot", true, Some("CmdOrCtrl+Shift+S"))?)
+        .services()
+        .separator()
+        .hide()
+        .hide_others()
+        .show_all()
+        .separator()
+        .quit()
+        .build()?;
+
+    let file_menu = SubmenuBuilder::new(app, "File")
+        .item(&MenuItem::with_id(
+            app,
+            "export",
+            "Export State...",
+            true,
+            Some("CmdOrCtrl+E"),
+        )?)
+        .item(&MenuItem::with_id(
+            app,
+            "import",
+            "Import State...",
+            true,
+            Some("CmdOrCtrl+I"),
+        )?)
+        .separator()
+        .item(&MenuItem::with_id(
+            app,
+            "screenshot",
+            "Screenshot",
+            true,
+            Some("CmdOrCtrl+Shift+S"),
+        )?)
         .separator()
         .close_window()
         .build()?;
@@ -171,20 +271,61 @@ fn build_menu(app: &tauri::AppHandle) -> Result<Menu<tauri::Wry>, tauri::Error> 
         .build()?;
 
     let simulation_menu = SubmenuBuilder::new(app, "Simulation")
-        .item(&MenuItem::with_id(app, "play_pause", "Play / Pause", true, Some("Space"))?)
-        .item(&MenuItem::with_id(app, "step_forward", "Step Forward", true, Some("Right"))?)
-        .item(&MenuItem::with_id(app, "reset_sim", "Reset", true, Some("CmdOrCtrl+R"))?)
+        .item(&MenuItem::with_id(
+            app,
+            "play_pause",
+            "Play / Pause",
+            true,
+            Some("Space"),
+        )?)
+        .item(&MenuItem::with_id(
+            app,
+            "step_forward",
+            "Step Forward",
+            true,
+            Some("Right"),
+        )?)
+        .item(&MenuItem::with_id(
+            app,
+            "reset_sim",
+            "Reset",
+            true,
+            Some("CmdOrCtrl+R"),
+        )?)
         .separator()
-        .item(&MenuItem::with_id(app, "clear_trails", "Clear Trails", true, Some("T"))?)
+        .item(&MenuItem::with_id(
+            app,
+            "clear_trails",
+            "Clear Trails",
+            true,
+            Some("T"),
+        )?)
         .build()?;
 
     let help_menu = SubmenuBuilder::new(app, "Help")
-        .item(&MenuItem::with_id(app, "shortcuts", "Keyboard Shortcuts", true, Some("CmdOrCtrl+/"))?)
+        .item(&MenuItem::with_id(
+            app,
+            "shortcuts",
+            "Keyboard Shortcuts",
+            true,
+            Some("CmdOrCtrl+/"),
+        )?)
         .separator()
-        .item(&MenuItem::with_id(app, "about_app", "About Gravitation3", true, None::<&str>)?)
+        .item(&MenuItem::with_id(
+            app,
+            "about_app",
+            "About Gravitation3",
+            true,
+            None::<&str>,
+        )?)
         .build()?;
 
-    MenuBuilder::new(app)
+    let mut builder = MenuBuilder::new(app);
+    #[cfg(target_os = "macos")]
+    {
+        builder = builder.item(&app_menu);
+    }
+    builder
         .items(&[&file_menu, &edit_menu, &simulation_menu, &help_menu])
         .build()
 }
@@ -197,10 +338,18 @@ pub fn run() {
     tauri::Builder::default()
         .manage(SimulatorManager::new())
         .invoke_handler(tauri::generate_handler![
+            create_simulator,
             physics_step,
             load_preset,
             set_parameter,
             get_state,
+            reset_simulation,
+            get_collisions,
+            seed_particles,
+            add_pendulum,
+            remove_pendulum,
+            add_body,
+            remove_body,
             store_api_key,
             has_api_key,
             get_api_key,

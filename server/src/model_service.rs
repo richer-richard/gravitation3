@@ -6,8 +6,8 @@ use axum::{
     Json, Router,
 };
 use physics_engine::simulations::{
-    DoubleGyreSimulator, DoublePendulumSimulator, LorenzSimulator, MalkusWheelSimulator,
-    RosslerSimulator, ThreeBodySimulator,
+    DoubleGyreSimulator, DoublePendulumSimulator, LidDrivenCavitySimulator, LorenzSimulator,
+    MalkusWheelSimulator, RosslerSimulator, Simulator, ThreeBodySimulator,
 };
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -65,6 +65,7 @@ async fn models_info() -> impl IntoResponse {
             { "id": "lorenz", "name": "Lorenz Attractor", "description": "Lorenz system demonstrating deterministic chaos" },
             { "id": "rossler", "name": "Rossler Attractor", "description": "Rossler system with spiral-type strange attractor" },
             { "id": "double_gyre", "name": "Double Gyre", "description": "Double-gyre flow model for fluid mixing" },
+            { "id": "lid_driven_cavity", "name": "Lid-Driven Cavity", "description": "Canonical CFD cavity benchmark with moving-wall shear flow" },
             { "id": "malkus_waterwheel", "name": "Malkus Waterwheel", "description": "Malkus-Lorenz waterwheel chaotic system" }
         ]
     }))
@@ -144,6 +145,20 @@ async fn predict(
             let damping = body.state.get("damping").and_then(|v| v.as_f64()).unwrap_or(0.5);
             let mut sim = MalkusWheelSimulator::new(8, inflow, leak, damping, dt);
             sim.load_preset("chaotic");
+            let mut states = Vec::with_capacity(steps as usize);
+            for _ in 0..steps {
+                sim.step(1);
+                states.push(serde_json::to_value(sim.get_state()).unwrap_or_default());
+            }
+            states
+        }
+        "lid_driven_cavity" => {
+            let mut sim = LidDrivenCavitySimulator::new();
+            let reynolds = body.state.get("reynolds").and_then(|v| v.as_f64()).unwrap_or(400.0);
+            let lid_velocity = body.state.get("lid_velocity").and_then(|v| v.as_f64()).unwrap_or(1.0);
+            sim.set_parameter("reynolds", reynolds);
+            sim.set_parameter("lid_velocity", lid_velocity);
+            sim.set_parameter("dt", dt);
             let mut states = Vec::with_capacity(steps as usize);
             for _ in 0..steps {
                 sim.step(1);

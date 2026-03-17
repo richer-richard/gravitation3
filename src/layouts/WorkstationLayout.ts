@@ -24,6 +24,7 @@ const SIDEBAR_ITEMS = [
   { id: "lorenz", label: "Lorenz", icon: "&#8734;" },
   { id: "rossler", label: "Rossler", icon: "&#8635;" },
   { id: "double-gyre", label: "Gyre", icon: "&#8776;" },
+  { id: "lid-driven-cavity", label: "Cavity", icon: "&#9635;" },
   { id: "malkus-waterwheel", label: "Malkus", icon: "&#9881;" },
 ];
 
@@ -40,7 +41,10 @@ export function createWorkstationLayout(
     <div id="workstation" class="h-screen flex flex-col bg-zinc-900 overflow-hidden">
       <!-- Top Bar -->
       <div id="top-bar" class="h-12 bg-zinc-800 border-b border-zinc-700 flex items-center px-4 gap-4 shrink-0">
-        <a href="/" data-link class="text-blue-400 font-bold text-sm hover:text-blue-300">G&sup3;</a>
+        <a href="/" data-link class="inline-flex items-center gap-2 text-zinc-200 font-semibold text-sm hover:text-white transition-colors">
+          <img src="/logo-mark.svg" alt="" class="w-4 h-4 rounded-[5px] shadow-[0_0_14px_rgba(241,118,176,0.16)]" />
+          <span>G&sup3;</span>
+        </a>
         <span class="text-zinc-300 font-medium">${simName}</span>
         <span class="text-xs text-zinc-500 bg-zinc-700/50 px-2 py-0.5 rounded" id="preset-badge">${presetName}</span>
         <div class="flex items-center gap-2 ml-auto" id="top-bar-controls"></div>

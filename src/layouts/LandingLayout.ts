@@ -10,7 +10,10 @@ export function createLandingLayout(
   container.innerHTML = `
     <div class="min-h-screen bg-zinc-900 flex flex-col">
       <nav class="h-14 bg-zinc-800/80 backdrop-blur border-b border-zinc-700/50 flex items-center px-6 shrink-0 sticky top-0 z-50">
-        <a href="/" data-link class="text-blue-400 font-bold text-lg hover:text-blue-300 transition-colors">G&sup3;</a>
+        <a href="/" data-link class="inline-flex items-center gap-2 text-zinc-200 font-semibold text-sm hover:text-white transition-colors">
+          <img src="/logo-mark.svg" alt="" class="w-5 h-5 rounded-[6px] shadow-[0_0_16px_rgba(241,118,176,0.18)]" />
+          <span>Gravitation<sup>3</sup></span>
+        </a>
         <div class="flex items-center gap-6 ml-8">
           <a href="/explore" data-link class="text-sm text-zinc-400 hover:text-zinc-200 transition-colors">Explore</a>
           <a href="/docs" data-link class="text-sm text-zinc-400 hover:text-zinc-200 transition-colors">Docs</a>

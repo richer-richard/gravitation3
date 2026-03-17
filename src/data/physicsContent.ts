@@ -310,6 +310,59 @@ export function getPhysicsContent(): PhysicsSection[] {
       ],
     },
     {
+      id: "lid-driven-cavity",
+      title: "Lid-Driven Cavity",
+      accentColor: "#22d3ee",
+      subsections: [
+        {
+          heading: "Introduction",
+          html: `
+            <p>The <strong>lid-driven cavity</strong> is one of the canonical benchmarks in computational fluid dynamics. A square box is filled with fluid, all walls enforce no-slip velocity, and the top wall moves sideways at constant speed.</p>
+            <p>That simple setup generates a rich recirculating flow: a primary vortex in the cavity centre, secondary eddies in the corners, and thin shear layers near the moving lid.</p>
+            <div class="info-callout">
+              <p class="text-sm text-zinc-300"><strong class="text-cyan-300">Why it matters:</strong> Because the geometry is simple but the flow is subtle, researchers use the cavity as a standard way to validate incompressible Navier-Stokes solvers, pressure projection methods, and grid convergence.</p>
+            </div>
+          `,
+        },
+        {
+          heading: "Governing Equations",
+          html: `
+            <p>The flow follows the incompressible Navier-Stokes equations:</p>
+            <div class="math-block">${tex("\\begin{aligned} \\frac{\\partial \\vec{u}}{\\partial t} + (\\vec{u}\\cdot\\nabla)\\vec{u} &= -\\nabla p + \\nu \\nabla^2 \\vec{u} \\\\ \\nabla \\cdot \\vec{u} &= 0 \\end{aligned}")}</div>
+            <p>The top boundary imposes a horizontal lid velocity ${tex("u = U", false)}, while the other walls satisfy no-slip conditions ${tex("\\vec{u}=0", false)}.</p>
+          `,
+        },
+        {
+          heading: "Parameters",
+          html: `
+            <ul class="list-disc pl-5 space-y-1 text-zinc-400 text-sm">
+              <li><strong class="text-zinc-200">Re</strong> — Reynolds number, setting the balance of inertia and viscosity</li>
+              <li><strong class="text-zinc-200">U</strong> — lid velocity along the top wall</li>
+              <li><strong class="text-zinc-200">Δt</strong> — solver timestep controlling stability and temporal resolution</li>
+            </ul>
+          `,
+        },
+        {
+          heading: "Key Concepts",
+          html: `
+            <p><strong class="text-zinc-200">Pressure projection:</strong> Numerical solvers often advance an intermediate velocity field, then solve a pressure Poisson equation to enforce ${tex("\\nabla \\cdot \\vec{u}=0", false)}.</p>
+            <p><strong class="text-zinc-200">Corner vortices:</strong> As Reynolds number increases, secondary and tertiary recirculation cells appear in the cavity corners, making the benchmark a good stress test for grid resolution.</p>
+          `,
+        },
+        {
+          heading: "Applications",
+          html: `
+            <ul class="list-disc pl-5 space-y-1 text-zinc-400 text-sm">
+              <li>Validation of finite-difference, finite-volume, and spectral CFD codes</li>
+              <li>Testing incompressible pressure solvers and projection methods</li>
+              <li>Studying shear layers, recirculation, and numerical diffusion</li>
+              <li>Training intuition for more complex aerospace and internal-flow simulations</li>
+            </ul>
+          `,
+        },
+      ],
+    },
+    {
       id: "malkus-waterwheel",
       title: "Malkus Waterwheel",
       accentColor: "#f59e0b",

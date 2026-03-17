@@ -37,6 +37,11 @@ pub struct ThreeBodySimulator {
     pub removed_indices: Vec<usize>,
 }
 
+const BODY_PALETTE: [u32; 12] = [
+    0x60a5fa, 0x22d3ee, 0xa78bfa, 0xf59e0b, 0xf472b6, 0x34d399, 0xfb7185, 0xfacc15,
+    0x38bdf8, 0x818cf8, 0x4ade80, 0xf97316,
+];
+
 impl ThreeBodySimulator {
     pub fn new(g: f64, dt: f64) -> Self {
         Self {
@@ -69,6 +74,62 @@ impl ThreeBodySimulator {
         self.initial_energy = self.calculate_total_energy();
         self.recent_collisions.clear();
         self.removed_indices.clear();
+    }
+
+    fn sync_initial_state(&mut self) {
+        self.initial_bodies = self.bodies.clone();
+        self.initial_energy = self.calculate_total_energy();
+    }
+
+    fn recenter_momentum(&mut self) {
+        let total_mass: f64 = self.bodies.iter().map(|body| body.mass).sum();
+        if total_mass <= 1e-12 {
+            return;
+        }
+
+        let correction = self.calculate_momentum() / total_mass;
+        for body in &mut self.bodies {
+            body.set_vel(body.vel() - correction);
+        }
+    }
+
+    pub fn add_generated_body(&mut self) {
+        if self.bodies.len() >= 12 {
+            return;
+        }
+
+        let total_mass: f64 = self.bodies.iter().map(|body| body.mass).sum::<f64>().max(1.0);
+        let com = self.calculate_center_of_mass();
+        let count = self.bodies.len();
+        let angle = count as f64 * 2.399_963_229_728_653;
+        let radius = 1.55 + count as f64 * 0.24;
+        let relative = Vec3::new(radius * angle.cos(), radius * angle.sin(), ((count % 3) as f64 - 1.0) * 0.08);
+        let planar_norm = (relative.x * relative.x + relative.y * relative.y).sqrt();
+        let tangent = if planar_norm > 1e-8 {
+            Vec3::new(-relative.y, relative.x, 0.0).normalize()
+        } else {
+            Vec3::new(0.0, 1.0, 0.0)
+        };
+        let orbital_speed = (self.g * total_mass / radius.max(0.35)).sqrt() * 0.78;
+        let velocity = tangent * orbital_speed;
+        let mass = (0.8 + count as f64 * 0.15).clamp(0.25, 4.5);
+        let color = BODY_PALETTE[count % BODY_PALETTE.len()];
+        let name = format!("Body {}", count + 1);
+
+        self.bodies
+            .push(Body::new(com + relative, velocity, mass, color, &name));
+        self.recenter_momentum();
+        self.sync_initial_state();
+    }
+
+    pub fn remove_body_by_index(&mut self, index: usize) {
+        if self.bodies.len() <= 2 || index >= self.bodies.len() {
+            return;
+        }
+
+        self.bodies.remove(index);
+        self.recenter_momentum();
+        self.sync_initial_state();
     }
 
     fn calculate_derivative(
@@ -204,8 +265,9 @@ impl ThreeBodySimulator {
                         let bj_mass = self.bodies[j].mass;
                         let total_mass = bi_mass + bj_mass;
 
-                        let collision_pos =
-                            self.bodies[i].pos() + (self.bodies[j].pos() - self.bodies[i].pos()) * (bi_mass / total_mass);
+                        let collision_pos = self.bodies[i].pos()
+                            + (self.bodies[j].pos() - self.bodies[i].pos())
+                                * (bi_mass / total_mass);
 
                         self.recent_collisions.push(CollisionEvent {
                             position: [collision_pos.x, collision_pos.y, collision_pos.z],
@@ -227,12 +289,12 @@ impl ThreeBodySimulator {
         let total_mass = self.bodies[i].mass + self.bodies[j].mass;
 
         // Conservation of momentum
-        let new_vel =
-            (self.bodies[i].vel() * self.bodies[i].mass + self.bodies[j].vel() * self.bodies[j].mass)
-                / total_mass;
-        let new_pos =
-            (self.bodies[i].pos() * self.bodies[i].mass + self.bodies[j].pos() * self.bodies[j].mass)
-                / total_mass;
+        let new_vel = (self.bodies[i].vel() * self.bodies[i].mass
+            + self.bodies[j].vel() * self.bodies[j].mass)
+            / total_mass;
+        let new_pos = (self.bodies[i].pos() * self.bodies[i].mass
+            + self.bodies[j].pos() * self.bodies[j].mass)
+            / total_mass;
 
         let new_name = format!("{}+{}", self.bodies[i].name, self.bodies[j].name);
 
@@ -307,6 +369,9 @@ impl ThreeBodySimulator {
     }
 
     pub fn get_min_distance(&self) -> f64 {
+        if self.bodies.len() < 2 {
+            return 0.0;
+        }
         let mut min_dist = f64::INFINITY;
         for i in 0..self.bodies.len() {
             for j in (i + 1)..self.bodies.len() {
@@ -386,12 +451,52 @@ impl super::Simulator for ThreeBodySimulator {
         match name {
             "G" | "g" => self.g = validation::validate_g(value),
             "dt" => self.dt = validation::validate_dt(value),
+            "m1" => {
+                if !self.bodies.is_empty() {
+                    self.bodies[0].mass = value.clamp(0.01, 100.0);
+                }
+            }
+            "m2" => {
+                if self.bodies.len() > 1 {
+                    self.bodies[1].mass = value.clamp(0.01, 100.0);
+                }
+            }
+            "m3" => {
+                if self.bodies.len() > 2 {
+                    self.bodies[2].mass = value.clamp(0.01, 100.0);
+                }
+            }
+            dynamic if dynamic.starts_with("body_mass_") => {
+                if let Ok(index) = dynamic.trim_start_matches("body_mass_").parse::<usize>() {
+                    if let Some(body) = self.bodies.get_mut(index) {
+                        body.mass = value.clamp(0.01, 100.0);
+                    }
+                }
+            }
             _ => {}
         }
+        self.sync_initial_state();
+    }
+
+    fn load_preset(&mut self, name: &str) {
+        ThreeBodySimulator::load_preset(self, name);
     }
 
     fn export_data(&self) -> serde_json::Value {
-        self.get_state();
         serde_json::to_value(self.get_state()).unwrap_or_default()
+    }
+
+    fn get_collisions(&self) -> Result<serde_json::Value, String> {
+        serde_json::to_value(&self.recent_collisions).map_err(|err| err.to_string())
+    }
+
+    fn add_body(&mut self) -> Result<serde_json::Value, String> {
+        ThreeBodySimulator::add_generated_body(self);
+        Ok(serde_json::to_value(ThreeBodySimulator::get_state(self)).unwrap_or_default())
+    }
+
+    fn remove_body(&mut self, index: usize) -> Result<serde_json::Value, String> {
+        ThreeBodySimulator::remove_body_by_index(self, index);
+        Ok(serde_json::to_value(ThreeBodySimulator::get_state(self)).unwrap_or_default())
     }
 }

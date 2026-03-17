@@ -38,6 +38,12 @@ const PRESETS: Record<SimulationType, Preset[]> = {
     { id: "turbulent", name: "Turbulent", description: "High mixing regime" },
     { id: "steady", name: "Steady", description: "Time-independent flow" },
   ],
+  "lid-driven-cavity": [
+    { id: "standard", name: "Standard", description: "Benchmark cavity at Re 400" },
+    { id: "laminar", name: "Laminar", description: "Low Reynolds, stable recirculation" },
+    { id: "transition", name: "Transition", description: "Stronger shear with corner vortices" },
+    { id: "high-shear", name: "High Shear", description: "Fast lid and sharper vorticity layers" },
+  ],
   "malkus-waterwheel": [
     { id: "chaotic", name: "Chaotic", description: "Chaotic rotation" },
     { id: "steady", name: "Steady", description: "Steady rotation" },

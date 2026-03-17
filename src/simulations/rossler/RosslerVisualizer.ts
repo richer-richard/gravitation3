@@ -16,6 +16,7 @@ interface RosslerState {
   b: number;
   c: number;
   entropy: number;
+  lyapunov_exponent: number;
 }
 
 interface TrajectoryVisual {
@@ -40,6 +41,7 @@ export class RosslerVisualizer implements SimulationVisualizer {
   private trajectoryVisuals: TrajectoryVisual[] = [];
   private starfield: THREE.Points | null = null;
   private renderLoopId = 0;
+  private lyapDiv: HTMLDivElement | null = null;
 
   init(container: HTMLElement): void {
     this.container = container;
@@ -84,6 +86,12 @@ export class RosslerVisualizer implements SimulationVisualizer {
 
     // Starfield
     this.createStarfield();
+
+    // Lyapunov exponent overlay
+    this.lyapDiv = document.createElement("div");
+    this.lyapDiv.style.cssText = "position:absolute;bottom:8px;left:8px;font-size:11px;color:rgba(255,255,255,0.6);font-family:monospace;pointer-events:none;";
+    container.appendChild(this.lyapDiv);
+
     this.renderLoop();
   }
 
@@ -187,6 +195,11 @@ export class RosslerVisualizer implements SimulationVisualizer {
       updateTrailAlpha(trail.geometry, trail.positions.length, TRAIL_LENGTH);
       trail.geometry.setDrawRange(0, trail.positions.length);
     }
+
+    // Update Lyapunov exponent display
+    if (this.lyapDiv && s.lyapunov_exponent !== undefined) {
+      this.lyapDiv.textContent = `\u03BB\u2081 = ${s.lyapunov_exponent.toFixed(4)}`;
+    }
   }
 
   clearTrails(): void {
@@ -234,6 +247,11 @@ export class RosslerVisualizer implements SimulationVisualizer {
       this.scene.remove(this.starfield);
       this.starfield.geometry.dispose();
       (this.starfield.material as THREE.Material).dispose();
+    }
+
+    if (this.lyapDiv) {
+      this.lyapDiv.remove();
+      this.lyapDiv = null;
     }
 
     this.renderer.dispose();

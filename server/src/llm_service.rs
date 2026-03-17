@@ -15,7 +15,7 @@ use std::env;
 use std::sync::Arc;
 
 use provider_adapters::types::{ChatRequest, StreamEvent};
-use provider_adapters::{anthropic, deepseek, gemini, moonshot, openai};
+use provider_adapters::{anthropic, deepseek, gemini, minimax, moonshot, openai, qwen};
 
 /// Shared state for the LLM service.
 #[derive(Clone)]
@@ -60,6 +60,8 @@ fn resolve_api_key(headers: &HeaderMap, provider: &str) -> Result<String, (Statu
         "gemini" | "google" => "GEMINI_API_KEY",
         "deepseek" => "DEEPSEEK_API_KEY",
         "moonshot" | "kimi" => "MOONSHOT_API_KEY",
+        "qwen" => "QWEN_API_KEY",
+        "minimax" => "MINIMAX_API_KEY",
         _ => return Err((StatusCode::BAD_REQUEST, format!("Unknown provider: {}", provider))),
     };
 
@@ -98,9 +100,9 @@ async fn list_providers() -> impl IntoResponse {
                 "env_key": "ANTHROPIC_API_KEY"
             },
             {
-                "id": "gemini",
-                "name": "Google Gemini",
-                "models": ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-pro", "gemini-1.5-flash"],
+                "id": "google",
+                "name": "Google",
+                "models": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.5-flash-lite"],
                 "env_key": "GEMINI_API_KEY"
             },
             {
@@ -112,8 +114,20 @@ async fn list_providers() -> impl IntoResponse {
             {
                 "id": "moonshot",
                 "name": "Moonshot / Kimi",
-                "models": ["moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"],
+                "models": ["kimi-k2-0711-preview", "moonshot-v1-128k"],
                 "env_key": "MOONSHOT_API_KEY"
+            },
+            {
+                "id": "qwen",
+                "name": "Qwen",
+                "models": ["qwen-max", "qwen-plus", "qwen-turbo"],
+                "env_key": "QWEN_API_KEY"
+            },
+            {
+                "id": "minimax",
+                "name": "MiniMax",
+                "models": ["MiniMax-M2.5", "MiniMax-M2.5-highspeed", "MiniMax-M2.1", "MiniMax-M2.1-highspeed", "MiniMax-M2"],
+                "env_key": "MINIMAX_API_KEY"
             }
         ]
     }))
@@ -134,6 +148,8 @@ async fn chat(
         "gemini" | "google" => gemini::send_request(client, &api_key, &request).await,
         "deepseek" => deepseek::send_request(client, &api_key, &request).await,
         "moonshot" | "kimi" => moonshot::send_request(client, &api_key, &request).await,
+        "qwen" => qwen::send_request(client, &api_key, &request).await,
+        "minimax" => minimax::send_request(client, &api_key, &request).await,
         other => Err(format!("Unknown provider: {}", other)),
     };
 
@@ -160,6 +176,8 @@ async fn chat_stream(
         "gemini" | "google" => gemini::send_stream(client, &api_key, &request).await,
         "deepseek" => deepseek::send_stream(client, &api_key, &request).await,
         "moonshot" | "kimi" => moonshot::send_stream(client, &api_key, &request).await,
+        "qwen" => qwen::send_stream(client, &api_key, &request).await,
+        "minimax" => minimax::send_stream(client, &api_key, &request).await,
         other => Err(format!("Unknown provider: {}", other)),
     }
     .map_err(|e| (StatusCode::BAD_GATEWAY, e))?;
@@ -189,6 +207,8 @@ async fn chat_stream(
                             "gemini" | "google" => gemini::parse_stream_chunk(&complete),
                             "deepseek" => deepseek::parse_stream_chunk(&complete),
                             "moonshot" | "kimi" => moonshot::parse_stream_chunk(&complete),
+                            "qwen" => qwen::parse_stream_chunk(&complete),
+                            "minimax" => minimax::parse_stream_chunk(&complete),
                             _ => vec![],
                         };
 
@@ -222,6 +242,8 @@ async fn chat_stream(
                 "gemini" | "google" => gemini::parse_stream_chunk(&buffer),
                 "deepseek" => deepseek::parse_stream_chunk(&buffer),
                 "moonshot" | "kimi" => moonshot::parse_stream_chunk(&buffer),
+                "qwen" => qwen::parse_stream_chunk(&buffer),
+                "minimax" => minimax::parse_stream_chunk(&buffer),
                 _ => vec![],
             };
 

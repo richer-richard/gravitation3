@@ -1,6 +1,6 @@
 # Gravitation³
 
-Interactive physics simulation platform featuring six dynamical systems, AI-powered analysis, and ML predictions.
+Interactive physics simulation platform featuring chaos and CFD workstations, AI-assisted analysis, and a native Rust engine.
 
 ## Simulations
 
@@ -9,21 +9,21 @@ Interactive physics simulation platform featuring six dynamical systems, AI-powe
 - **Lorenz Attractor** — The butterfly effect
 - **Rossler Attractor** — Spiral chaos
 - **Double Gyre** — Oceanic flow patterns
+- **Lid-Driven Cavity** — CFD benchmark recirculation cell
 - **Malkus Waterwheel** — Mechanical chaos
 
 ## Architecture
 
 - **Frontend**: TypeScript + Three.js + Tailwind CSS (Vite)
-- **Physics**: Rust engine compiled to WASM (Web Worker)
-- **Server**: Axum (Rust) — LLM proxy, data collection, ML serving
+- **Physics**: Native Rust engine via Tauri IPC
+- **Server**: Axum (Rust) — LLM proxy and engine-backed services
 - **Desktop**: Tauri 2.x native macOS app
-- **ML**: ONNX Runtime Web for client-side predictions
+- **AI Providers**: OpenAI, Google, Anthropic, DeepSeek, Moonshot, Qwen, MiniMax
 
 ## Development
 
 ```bash
 npm install
-npm run build:wasm
 npm run dev
 ```
 

@@ -3,31 +3,26 @@ import type { SimulationVisualizer } from "../SimulationManager";
 import { createTrailMaterial, updateTrailAlpha } from "../../utils/trail-shader";
 
 interface PendulumState {
-  theta1: number;
-  theta2: number;
-  omega1: number;
-  omega2: number;
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  energy: number;
-  color: number;
-}
-
-interface DoublePendulumState {
-  pendulums: PendulumState[];
-  time: number;
+  state: [number, number, number, number]; // [theta1, omega1, theta2, omega2]
   l1: number;
   l2: number;
+  m1: number;
+  m2: number;
+  trail: [number, number][]; // [x2, y2] pairs from Rust
+}
+
+interface DoublePendulumData {
+  pendulums: PendulumState[];
+  time: number;
+  energy: number;
   entropy: number;
 }
 
 interface PendulumVisual {
   bob1: THREE.Mesh;
   bob2: THREE.Mesh;
-  rod1: THREE.Mesh | null;
-  rod2: THREE.Mesh | null;
+  rod1: THREE.Mesh;
+  rod2: THREE.Mesh;
   trail: {
     positions: THREE.Vector3[];
     geometry: THREE.BufferGeometry;
@@ -38,6 +33,8 @@ interface PendulumVisual {
 
 const TRAIL_LENGTH = 5000;
 const BG_COLOR = 0x0a0e27;
+const SCALE = 1.5; // Scale factor: pendulum coords -> scene units
+const COLORS = [0xef4444, 0x3b82f6, 0x10b981, 0xf59e0b];
 
 export class DoublePendulumVisualizer implements SimulationVisualizer {
   private scene!: THREE.Scene;
@@ -46,13 +43,14 @@ export class DoublePendulumVisualizer implements SimulationVisualizer {
   private container!: HTMLElement;
   private pivot!: THREE.Mesh;
   private pendulumVisuals: PendulumVisual[] = [];
-  private cameraDistance = 5;
+  private cameraDistance = 7;
   private cameraOffset = new THREE.Vector2(0, 0);
-  private targetOffset = new THREE.Vector2(0, 0);
-  private targetDistance = 5;
+  private targetOffset = new THREE.Vector2(0, -0.5);
+  private targetDistance = 7;
   private isDragging = false;
   private lastMouse = new THREE.Vector2();
   private renderLoopId = 0;
+  private horizonLine: THREE.Line | null = null;
 
   init(container: HTMLElement): void {
     this.container = container;
@@ -62,9 +60,9 @@ export class DoublePendulumVisualizer implements SimulationVisualizer {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(BG_COLOR);
 
-    this.camera = new THREE.PerspectiveCamera(60, w / h, 0.1, 1000);
-    this.camera.position.set(0, 0, 5);
-    this.camera.lookAt(0, 0, 0);
+    this.camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 1000);
+    this.camera.position.set(0, -0.5, 7);
+    this.camera.lookAt(0, -0.5, 0);
 
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -75,28 +73,39 @@ export class DoublePendulumVisualizer implements SimulationVisualizer {
     container.appendChild(this.renderer.domElement);
 
     // Lights
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-    const p1 = new THREE.PointLight(0xffffff, 1);
-    p1.position.set(5, 5, 5);
-    this.scene.add(p1);
-    const p2 = new THREE.PointLight(0xffffff, 0.5);
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(3, 5, 5);
+    this.scene.add(dirLight);
+    const p2 = new THREE.PointLight(0xffffff, 0.4);
     p2.position.set(-5, -5, 5);
     this.scene.add(p2);
 
-    // Grid
-    const grid = new THREE.GridHelper(6, 20, 0x00d4ff, 0x1a1f3a);
+    // Grid (XY plane in background)
+    const grid = new THREE.GridHelper(8, 20, 0x00d4ff, 0x1a1f3a);
     grid.rotation.x = Math.PI / 2;
     grid.position.z = -0.3;
     (grid.material as THREE.Material).transparent = true;
-    (grid.material as THREE.Material).opacity = 0.15;
+    (grid.material as THREE.Material).opacity = 0.12;
     this.scene.add(grid);
 
+    // Horizon line at y=0 (pivot height reference)
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x334155, transparent: true, opacity: 0.4 });
+    const lineGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-5, 0, 0),
+      new THREE.Vector3(5, 0, 0),
+    ]);
+    this.horizonLine = new THREE.Line(lineGeo, lineMat);
+    this.scene.add(this.horizonLine);
+
     // Pivot
-    const pivotGeo = new THREE.SphereGeometry(0.06, 16, 16);
+    const pivotGeo = new THREE.SphereGeometry(0.07, 16, 16);
     const pivotMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      emissive: new THREE.Color(0xffffff),
-      emissiveIntensity: 0.5,
+      color: 0x94a3b8,
+      emissive: new THREE.Color(0x94a3b8),
+      emissiveIntensity: 0.3,
+      metalness: 0.6,
+      roughness: 0.4,
     });
     this.pivot = new THREE.Mesh(pivotGeo, pivotMat);
     this.scene.add(this.pivot);
@@ -131,31 +140,35 @@ export class DoublePendulumVisualizer implements SimulationVisualizer {
     canvas.addEventListener("wheel", (e) => {
       e.preventDefault();
       this.targetDistance *= 1 + e.deltaY * 0.001;
-      this.targetDistance = Math.max(2, Math.min(15, this.targetDistance));
+      this.targetDistance = Math.max(3, Math.min(20, this.targetDistance));
     }, { passive: false });
   }
 
   private createRod(color: number): THREE.Mesh {
-    // Create unit-length rod; will be scaled/positioned in updateRod()
-    const geo = new THREE.CylinderGeometry(0.015, 0.015, 1, 8);
+    const geo = new THREE.CylinderGeometry(0.04, 0.04, 1, 8);
     const mat = new THREE.MeshStandardMaterial({
       color,
       emissive: new THREE.Color(color),
-      emissiveIntensity: 0.2,
+      emissiveIntensity: 0.15,
+      metalness: 0.5,
+      roughness: 0.4,
       transparent: true,
-      opacity: 0.7,
+      opacity: 0.9,
     });
     return new THREE.Mesh(geo, mat);
   }
 
   private updateRod(rod: THREE.Mesh, from: THREE.Vector3, to: THREE.Vector3): void {
-    const dir = new THREE.Vector3().subVectors(to, from);
-    const len = dir.length();
-    rod.scale.set(1, len, 1);
     const mid = new THREE.Vector3().addVectors(from, to).multiplyScalar(0.5);
     rod.position.copy(mid);
-    rod.lookAt(to);
-    rod.rotateX(Math.PI / 2);
+
+    const dir = new THREE.Vector3().subVectors(to, from);
+    const length = dir.length();
+    rod.scale.set(1, length, 1);
+
+    // Compute angle from Y-axis in the XY plane
+    const angle = Math.atan2(dir.x, dir.y);
+    rod.rotation.set(0, 0, -angle);
   }
 
   private ensurePendulums(pendulums: PendulumState[]): void {
@@ -163,53 +176,69 @@ export class DoublePendulumVisualizer implements SimulationVisualizer {
       const pv = this.pendulumVisuals.pop()!;
       this.scene.remove(pv.bob1);
       this.scene.remove(pv.bob2);
-      if (pv.rod1) this.scene.remove(pv.rod1);
-      if (pv.rod2) this.scene.remove(pv.rod2);
+      this.scene.remove(pv.rod1);
+      this.scene.remove(pv.rod2);
       this.scene.remove(pv.trail.line);
       pv.bob1.geometry.dispose();
       (pv.bob1.material as THREE.Material).dispose();
       pv.bob2.geometry.dispose();
       (pv.bob2.material as THREE.Material).dispose();
+      pv.rod1.geometry.dispose();
+      (pv.rod1.material as THREE.Material).dispose();
+      pv.rod2.geometry.dispose();
+      (pv.rod2.material as THREE.Material).dispose();
       pv.trail.geometry.dispose();
       (pv.trail.line.material as THREE.Material).dispose();
     }
 
     while (this.pendulumVisuals.length < pendulums.length) {
       const idx = this.pendulumVisuals.length;
+      const colorHex = COLORS[idx % COLORS.length];
+      const color = new THREE.Color(colorHex);
       const p = pendulums[idx];
-      const color = new THREE.Color(p.color);
 
-      const bobGeo = new THREE.SphereGeometry(0.12, 32, 32);
+      // Bob1
+      const bob1Radius = 0.06 + p.m1 * 0.03;
+      const bob1Geo = new THREE.SphereGeometry(bob1Radius, 32, 32);
       const bob1Mat = new THREE.MeshStandardMaterial({
         color,
         emissive: color,
         emissiveIntensity: 0.3,
+        metalness: 0.3,
+        roughness: 0.5,
       });
-      const bob1 = new THREE.Mesh(bobGeo.clone(), bob1Mat);
+      const bob1 = new THREE.Mesh(bob1Geo, bob1Mat);
       this.scene.add(bob1);
 
+      // Bob2
+      const bob2Radius = 0.06 + p.m2 * 0.03;
+      const bob2Geo = new THREE.SphereGeometry(bob2Radius, 32, 32);
+      const bob2Color = color.clone().multiplyScalar(0.85);
       const bob2Mat = new THREE.MeshStandardMaterial({
-        color: color.clone().multiplyScalar(0.8),
-        emissive: color.clone().multiplyScalar(0.8),
+        color: bob2Color,
+        emissive: bob2Color,
         emissiveIntensity: 0.3,
+        metalness: 0.3,
+        roughness: 0.5,
       });
-      const bob2 = new THREE.Mesh(bobGeo, bob2Mat);
+      const bob2 = new THREE.Mesh(bob2Geo, bob2Mat);
       this.scene.add(bob2);
 
-      // Trail for bob2 (tip) with fade-out shader
+      // Rods
+      const rod1 = this.createRod(colorHex);
+      this.scene.add(rod1);
+      const rod2 = this.createRod(colorHex);
+      this.scene.add(rod2);
+
+      // Trail for bob2 (tip)
       const posArr = new Float32Array(TRAIL_LENGTH * 3);
       const trailGeo = new THREE.BufferGeometry();
       trailGeo.setAttribute("position", new THREE.BufferAttribute(posArr, 3));
       trailGeo.setAttribute("alpha", new THREE.BufferAttribute(new Float32Array(TRAIL_LENGTH), 1));
       trailGeo.setDrawRange(0, 0);
-      const trailMat = createTrailMaterial(p.color);
+      const trailMat = createTrailMaterial(colorHex);
       const line = new THREE.Line(trailGeo, trailMat);
       this.scene.add(line);
-
-      const rod1 = this.createRod(p.color);
-      this.scene.add(rod1);
-      const rod2 = this.createRod(p.color);
-      this.scene.add(rod2);
 
       this.pendulumVisuals.push({
         bob1,
@@ -227,7 +256,7 @@ export class DoublePendulumVisualizer implements SimulationVisualizer {
   }
 
   update(state: unknown): void {
-    const s = state as DoublePendulumState;
+    const s = state as DoublePendulumData;
     if (!s?.pendulums) return;
 
     this.ensurePendulums(s.pendulums);
@@ -235,18 +264,25 @@ export class DoublePendulumVisualizer implements SimulationVisualizer {
     for (let i = 0; i < s.pendulums.length; i++) {
       const p = s.pendulums[i];
       const pv = this.pendulumVisuals[i];
+      const [theta1, , theta2] = p.state;
 
-      const p1 = new THREE.Vector3(p.x1, p.y1, 0);
-      const p2 = new THREE.Vector3(p.x2, p.y2, 0);
+      // Compute Cartesian positions from angles
+      const x1 = p.l1 * Math.sin(theta1) * SCALE;
+      const y1 = -p.l1 * Math.cos(theta1) * SCALE;
+      const x2 = x1 + p.l2 * Math.sin(theta2) * SCALE;
+      const y2 = y1 - p.l2 * Math.cos(theta2) * SCALE;
+
+      const p1 = new THREE.Vector3(x1, y1, 0);
+      const p2 = new THREE.Vector3(x2, y2, 0);
 
       pv.bob1.position.copy(p1);
       pv.bob2.position.copy(p2);
 
-      // Update rod transforms (reuse existing meshes)
-      if (pv.rod1) this.updateRod(pv.rod1, new THREE.Vector3(0, 0, 0), p1);
-      if (pv.rod2) this.updateRod(pv.rod2, p1, p2);
+      // Update rods
+      this.updateRod(pv.rod1, new THREE.Vector3(0, 0, 0), p1);
+      this.updateRod(pv.rod2, p1, p2);
 
-      // Trail (bob2)
+      // Trail from Rust data or computed position
       const trail = pv.trail;
       trail.positions.push(p2.clone());
       if (trail.positions.length > TRAIL_LENGTH) trail.positions.shift();
@@ -309,16 +345,12 @@ export class DoublePendulumVisualizer implements SimulationVisualizer {
     for (const pv of this.pendulumVisuals) {
       this.scene.remove(pv.bob1);
       this.scene.remove(pv.bob2);
-      if (pv.rod1) {
-        this.scene.remove(pv.rod1);
-        pv.rod1.geometry.dispose();
-        (pv.rod1.material as THREE.Material).dispose();
-      }
-      if (pv.rod2) {
-        this.scene.remove(pv.rod2);
-        pv.rod2.geometry.dispose();
-        (pv.rod2.material as THREE.Material).dispose();
-      }
+      this.scene.remove(pv.rod1);
+      pv.rod1.geometry.dispose();
+      (pv.rod1.material as THREE.Material).dispose();
+      this.scene.remove(pv.rod2);
+      pv.rod2.geometry.dispose();
+      (pv.rod2.material as THREE.Material).dispose();
       this.scene.remove(pv.trail.line);
       pv.bob1.geometry.dispose();
       (pv.bob1.material as THREE.Material).dispose();
@@ -333,6 +365,11 @@ export class DoublePendulumVisualizer implements SimulationVisualizer {
       this.scene.remove(this.pivot);
       this.pivot.geometry.dispose();
       (this.pivot.material as THREE.Material).dispose();
+    }
+    if (this.horizonLine) {
+      this.scene.remove(this.horizonLine);
+      this.horizonLine.geometry.dispose();
+      (this.horizonLine.material as THREE.Material).dispose();
     }
 
     this.renderer.dispose();

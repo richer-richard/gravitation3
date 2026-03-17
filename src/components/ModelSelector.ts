@@ -6,7 +6,7 @@
 import type { AIModel } from "../ai/types";
 import { MODELS, getModelsForProvider } from "../ai/registry";
 
-const PROVIDERS = ["anthropic", "openai", "gemini", "deepseek", "moonshot"] as const;
+const PROVIDERS = ["anthropic", "openai", "google", "deepseek", "moonshot", "qwen", "minimax"] as const;
 
 export class ModelSelector {
   private container: HTMLElement;
@@ -30,8 +30,17 @@ export class ModelSelector {
         ${PROVIDERS.map((provider) => {
           const models = getModelsForProvider(provider);
           if (models.length === 0) return "";
+          const label = provider === "google"
+            ? "Google"
+            : provider === "moonshot"
+              ? "Moonshot"
+              : provider === "qwen"
+                ? "Qwen"
+                : provider === "minimax"
+                  ? "MiniMax"
+                  : provider.charAt(0).toUpperCase() + provider.slice(1);
           return `
-            <optgroup label="${provider.charAt(0).toUpperCase() + provider.slice(1)}">
+            <optgroup label="${label}">
               ${models
                 .map(
                   (m) =>

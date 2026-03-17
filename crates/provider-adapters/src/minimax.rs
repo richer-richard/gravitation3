@@ -2,19 +2,15 @@ use serde_json::{json, Value};
 
 use super::types::{ChatRequest, ChatResponse, StreamEvent, Usage};
 
-const ANTHROPIC_API_URL: &str = "https://api.anthropic.com/v1/messages";
-const ANTHROPIC_VERSION: &str = "2023-06-01";
+const MINIMAX_API_URL: &str = "https://api.minimaxi.com/anthropic/v1/messages";
+const MINIMAX_VERSION: &str = "2023-06-01";
 
-/// Build the Anthropic Messages API request body from our unified ChatRequest.
-/// Anthropic requires the system message in a separate top-level field and uses
-/// `x-api-key` / `anthropic-version` headers instead of Bearer auth.
 fn build_request_body(request: &ChatRequest) -> Value {
     let mut system_text: Option<String> = None;
     let mut messages: Vec<Value> = Vec::new();
 
     for msg in &request.messages {
         if msg.role == "system" {
-            // Anthropic expects system as a separate top-level field.
             system_text = Some(msg.content.clone());
         } else {
             messages.push(json!({
@@ -28,28 +24,24 @@ fn build_request_body(request: &ChatRequest) -> Value {
         "model": request.model,
         "messages": messages,
         "max_tokens": request.max_tokens,
-        "temperature": request.temperature,
+        "temperature": request.temperature.clamp(0.01, 1.0),
         "stream": request.stream,
     });
 
-    if let Some(sys) = system_text {
-        body["system"] = json!(sys);
+    if let Some(system) = system_text {
+        body["system"] = json!(system);
     }
 
-    // Enable extended thinking if requested
     if request.thinking {
         body["thinking"] = json!({
             "type": "enabled",
-            "budget_tokens": request.max_tokens.saturating_sub(100).max(1024)
+            "budget_tokens": request.max_tokens.saturating_sub(100).max(1024),
         });
-        // Anthropic does not allow temperature with thinking
-        body.as_object_mut().unwrap().remove("temperature");
     }
 
     body
 }
 
-/// Send a non-streaming request to the Anthropic Messages API.
 pub async fn send_request(
     client: &reqwest::Client,
     api_key: &str,
@@ -59,14 +51,14 @@ pub async fn send_request(
     body["stream"] = json!(false);
 
     let response = client
-        .post(ANTHROPIC_API_URL)
+        .post(MINIMAX_API_URL)
         .header("x-api-key", api_key)
-        .header("anthropic-version", ANTHROPIC_VERSION)
+        .header("anthropic-version", MINIMAX_VERSION)
         .header("Content-Type", "application/json")
         .json(&body)
         .send()
         .await
-        .map_err(|e| format!("Anthropic request failed: {}", e))?;
+        .map_err(|e| format!("MiniMax request failed: {}", e))?;
 
     if !response.status().is_success() {
         let status = response.status();
@@ -74,15 +66,14 @@ pub async fn send_request(
             .text()
             .await
             .unwrap_or_else(|_| "unknown error".to_string());
-        return Err(format!("Anthropic API error ({}): {}", status, text));
+        return Err(format!("MiniMax API error ({}): {}", status, text));
     }
 
     let data: Value = response
         .json()
         .await
-        .map_err(|e| format!("Failed to parse Anthropic response: {}", e))?;
+        .map_err(|e| format!("Failed to parse MiniMax response: {}", e))?;
 
-    // Anthropic returns content as an array of content blocks.
     let mut content = String::new();
     let mut thinking = None;
 
@@ -117,7 +108,6 @@ pub async fn send_request(
     })
 }
 
-/// Send a streaming request to the Anthropic Messages API.
 pub async fn send_stream(
     client: &reqwest::Client,
     api_key: &str,
@@ -127,14 +117,14 @@ pub async fn send_stream(
     body["stream"] = json!(true);
 
     let response = client
-        .post(ANTHROPIC_API_URL)
+        .post(MINIMAX_API_URL)
         .header("x-api-key", api_key)
-        .header("anthropic-version", ANTHROPIC_VERSION)
+        .header("anthropic-version", MINIMAX_VERSION)
         .header("Content-Type", "application/json")
         .json(&body)
         .send()
         .await
-        .map_err(|e| format!("Anthropic stream request failed: {}", e))?;
+        .map_err(|e| format!("MiniMax stream request failed: {}", e))?;
 
     if !response.status().is_success() {
         let status = response.status();
@@ -142,19 +132,12 @@ pub async fn send_stream(
             .text()
             .await
             .unwrap_or_else(|_| "unknown error".to_string());
-        return Err(format!(
-            "Anthropic stream API error ({}): {}",
-            status, text
-        ));
+        return Err(format!("MiniMax stream API error ({}): {}", status, text));
     }
 
     Ok(response)
 }
 
-/// Parse an SSE chunk from Anthropic's streaming format into unified StreamEvents.
-///
-/// Anthropic uses `event: <type>` lines followed by `data: <json>` lines.
-/// Key event types: content_block_delta, message_delta, message_stop.
 pub fn parse_stream_chunk(chunk: &str) -> Vec<StreamEvent> {
     let mut events = Vec::new();
     let mut current_event_type: Option<String> = None;

@@ -94,7 +94,8 @@ impl DoubleGyreSimulator {
             let x = (col as f64 + 0.5) * self.domain_width / cols as f64;
             let y = (row as f64 + 0.5) * self.domain_height / rows as f64;
 
-            let hue = ((x / self.domain_width * 180.0 + y / self.domain_height * 60.0) % 360.0) as u32;
+            let hue =
+                ((x / self.domain_width * 180.0 + y / self.domain_height * 60.0) % 360.0) as u32;
             let color = hsl_to_rgb_hex(hue as f64, 0.7, 0.6);
 
             self.particles.push(Particle {
@@ -210,8 +211,16 @@ impl super::Simulator for DoubleGyreSimulator {
             _ => {}
         }
     }
+    fn load_preset(&mut self, name: &str) {
+        DoubleGyreSimulator::load_preset(self, name);
+    }
     fn export_data(&self) -> serde_json::Value {
         serde_json::to_value(self.get_state()).unwrap_or_default()
+    }
+
+    fn seed_particles(&mut self, count: usize) -> Result<serde_json::Value, String> {
+        DoubleGyreSimulator::seed_particles(self, count);
+        Ok(serde_json::to_value(DoubleGyreSimulator::get_state(self)).unwrap_or_default())
     }
 }
 

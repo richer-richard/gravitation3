@@ -1,10 +1,23 @@
 /**
- * Physics Bridge — communicates with the physics Web Worker.
- * Provides a promise-based API for the main thread.
- * Falls back to Tauri IPC when running in the desktop app.
+ * Physics Bridge — routes all simulation calls through native Tauri IPC.
+ * Physics execution is desktop-only and handled exclusively by the Rust engine.
  */
 
 import type { SimulationType } from "../simulations/types";
+import {
+  tauriAddBody,
+  tauriAddPendulum,
+  tauriCreateSimulator,
+  tauriGetCollisions,
+  tauriGetState,
+  tauriLoadPreset,
+  tauriPhysicsStep,
+  tauriRemovePendulum,
+  tauriRemoveBody,
+  tauriResetSimulation,
+  tauriSeedParticles,
+  tauriSetParameter,
+} from "./tauri-bridge";
 
 export interface PhysicsBridge {
   create(simType: SimulationType): Promise<void>;
@@ -22,101 +35,45 @@ export interface PhysicsBridge {
     omega2: number
   ): Promise<unknown>;
   removePendulum(index: number): Promise<unknown>;
+  addBody(): Promise<unknown>;
+  removeBody(index: number): Promise<unknown>;
   destroy(): void;
 }
 
-type PendingRequest = {
-  resolve: (value: unknown) => void;
-  reject: (reason: Error) => void;
-};
-
-class WorkerPhysicsBridge implements PhysicsBridge {
-  private worker: Worker;
-  private pending = new Map<number, PendingRequest>();
-  private nextId = 1;
-  private ready: Promise<void>;
+class TauriPhysicsBridge implements PhysicsBridge {
   private simType: SimulationType | null = null;
-
-  constructor() {
-    this.worker = new Worker(
-      new URL("../workers/physics-worker.ts", import.meta.url),
-      { type: "module" }
-    );
-
-    this.ready = new Promise((resolve) => {
-      const onReady = (e: MessageEvent) => {
-        if (e.data.id === -1 && e.data.data?.ready) {
-          this.worker.removeEventListener("message", onReady);
-          resolve();
-        }
-      };
-      this.worker.addEventListener("message", onReady);
-    });
-
-    this.worker.onmessage = (e: MessageEvent) => {
-      const { id, type, data, error } = e.data;
-      if (id === -1) return; // init message handled above
-      const pending = this.pending.get(id);
-      if (!pending) return;
-      this.pending.delete(id);
-      if (type === "error") {
-        pending.reject(new Error(error));
-      } else {
-        pending.resolve(data);
-      }
-    };
-  }
-
-  private send(
-    type: string,
-    params: Record<string, unknown> = {}
-  ): Promise<unknown> {
-    return this.ready.then(
-      () =>
-        new Promise((resolve, reject) => {
-          const id = this.nextId++;
-          this.pending.set(id, { resolve, reject });
-          this.worker.postMessage({
-            id,
-            type,
-            simType: this.simType,
-            ...params,
-          });
-        })
-    );
-  }
 
   async create(simType: SimulationType): Promise<void> {
     this.simType = simType;
-    await this.send("create", { simType });
+    await tauriCreateSimulator(simType);
   }
 
   step(steps = 1): Promise<unknown> {
-    return this.send("step", { steps });
+    return tauriPhysicsStep(this.requireSimType(), steps);
   }
 
   loadPreset(preset: string): Promise<unknown> {
-    return this.send("loadPreset", { preset });
+    return tauriLoadPreset(this.requireSimType(), preset);
   }
 
   async setParameter(name: string, value: number): Promise<void> {
-    await this.send("setParameter", { name, value });
+    await tauriSetParameter(this.requireSimType(), name, value);
   }
 
   getState(): Promise<unknown> {
-    return this.send("getState");
+    return tauriGetState(this.requireSimType());
   }
 
   reset(preset?: string): Promise<unknown> {
-    return this.send("reset", { preset });
+    return tauriResetSimulation(this.requireSimType(), preset);
   }
 
   getCollisions(): Promise<unknown> {
-    return this.send("getCollisions");
+    return tauriGetCollisions(this.requireSimType());
   }
 
   seedParticles(count: number): Promise<unknown> {
-    return this.send("seedParticles", { count });
+    return tauriSeedParticles(this.requireSimType(), count);
   }
 
   addPendulum(
@@ -125,19 +82,36 @@ class WorkerPhysicsBridge implements PhysicsBridge {
     theta2: number,
     omega2: number
   ): Promise<unknown> {
-    return this.send("addPendulum", { theta1, omega1, theta2, omega2 });
+    return tauriAddPendulum(
+      this.requireSimType(),
+      theta1,
+      omega1,
+      theta2,
+      omega2
+    );
   }
 
   removePendulum(index: number): Promise<unknown> {
-    return this.send("removePendulum", { index });
+    return tauriRemovePendulum(this.requireSimType(), index);
+  }
+
+  addBody(): Promise<unknown> {
+    return tauriAddBody(this.requireSimType());
+  }
+
+  removeBody(index: number): Promise<unknown> {
+    return tauriRemoveBody(this.requireSimType(), index);
   }
 
   destroy(): void {
-    this.worker.terminate();
-    for (const [, pending] of this.pending) {
-      pending.reject(new Error("Worker terminated"));
+    this.simType = null;
+  }
+
+  private requireSimType(): SimulationType {
+    if (!this.simType) {
+      throw new Error("Physics simulator not initialized");
     }
-    this.pending.clear();
+    return this.simType;
   }
 }
 
@@ -145,7 +119,7 @@ let bridgeInstance: PhysicsBridge | null = null;
 
 export function getPhysicsBridge(): PhysicsBridge {
   if (!bridgeInstance) {
-    bridgeInstance = new WorkerPhysicsBridge();
+    bridgeInstance = new TauriPhysicsBridge();
   }
   return bridgeInstance;
 }

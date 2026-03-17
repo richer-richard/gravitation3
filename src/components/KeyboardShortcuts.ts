@@ -49,6 +49,11 @@ export class KeyboardShortcuts {
       return;
     }
 
+    // Don't intercept native Cmd+Q, Cmd+W, Cmd+H — let macOS/Tauri handle them
+    if (e.metaKey && (e.key === "q" || e.key === "w" || e.key === "h")) {
+      return;
+    }
+
     for (const shortcut of this.shortcuts) {
       if (shortcut.modifier === "ctrl" && !e.ctrlKey && !e.metaKey) continue;
       if (shortcut.modifier === "shift" && !e.shiftKey) continue;

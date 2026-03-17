@@ -141,4 +141,27 @@ export const SIMULATIONS: SimulationData[] = [
     </svg>`,
     icon: `<svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.3" class="w-8 h-8"><circle cx="14" cy="15" r="8"/><circle cx="14" cy="15" r="2" fill="currentColor"/><line x1="14" y1="3" x2="14" y2="7"/><path d="M11 4h6" stroke-linecap="round"/></svg>`,
   },
+  {
+    id: "lid-driven-cavity",
+    name: "Lid-Driven Cavity",
+    category: "Fluid Dynamics",
+    tagline: "Canonical CFD benchmark for recirculating shear flow",
+    detail:
+      "A square cavity with a moving top wall generates primary and secondary vortices. Monitor recirculation, vorticity, divergence error, and particle advection in a studio built for computational fluid dynamics.",
+    equation: "u\\cdot\\nabla u = -\\nabla p + \\nu\\nabla^2u",
+    gradient: "from-cyan-400 to-blue-500",
+    accentColor: "#22d3ee",
+    glow: "rgba(34,211,238,0.2)",
+    previewSvg: `<svg viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="40" y="20" width="120" height="80" rx="10" stroke="rgba(34,211,238,0.3)" stroke-width="1"/>
+      <path d="M50 30H150" stroke="rgba(56,189,248,0.8)" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M70 70C70 48 92 40 106 53C118 64 112 85 92 88C74 90 62 77 70 70Z" stroke="rgba(34,211,238,0.4)" stroke-width="1.2"/>
+      <path d="M126 76C126 67 136 62 144 67C149 71 149 82 139 85C131 86 124 81 126 76Z" stroke="rgba(96,165,250,0.28)" stroke-width="1"/>
+      <path d="M54 84C54 77 62 72 69 75C74 78 74 88 67 91C60 93 53 90 54 84Z" stroke="rgba(56,189,248,0.24)" stroke-width="1"/>
+      <circle cx="92" cy="88" r="2.5" fill="rgba(34,211,238,0.65)"/>
+      <circle cx="139" cy="85" r="2" fill="rgba(96,165,250,0.5)"/>
+      <circle cx="67" cy="91" r="2" fill="rgba(56,189,248,0.45)"/>
+    </svg>`,
+    icon: `<svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.3" class="w-8 h-8"><rect x="5" y="5" width="18" height="18" rx="3"/><path d="M8 9h12"/><path d="M11 14c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4Z"/><path d="M9 18c0-1.5 1-3 2.5-3"/></svg>`,
+  },
 ];

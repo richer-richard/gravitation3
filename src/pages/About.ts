@@ -4,32 +4,32 @@ import { setupScrollAnimations } from "../components/ScrollAnimator";
 
 const TECH_STACK = [
   {
-    name: "Rust + WASM",
-    description: "Physics engine compiled to WebAssembly runs at near-native speed in the browser. SIMD-accelerated vector math.",
+    name: "Rust Physics Core",
+    description: "Native Rust physics engine with deterministic stepping, collision tracking, and zero browser bridge overhead on desktop.",
     accent: "#f59e0b",
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-6 h-6"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,
   },
   {
     name: "Three.js",
-    description: "Real-time 3D visualisation with WebGL rendering — smooth, interactive, and beautiful on every device.",
+    description: "Real-time 3D visualisation with WebGL rendering — smooth, interactive, and beautiful on any desktop computer.",
     accent: "#3b82f6",
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-6 h-6"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`,
   },
   {
     name: "Tauri 2",
-    description: "Native macOS desktop app with Rust physics and OS keychain integration. Zero WASM overhead on desktop.",
+    description: "Native desktop app with Rust physics, OS keychain integration, and macOS menu bar. Full OS-level integration.",
     accent: "#8b5cf6",
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-6 h-6"><rect x="3" y="3" width="18" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
   },
   {
-    name: "ONNX Runtime",
-    description: "Client-side neural network inference predicts chaotic trajectories and classifies system behaviour in real time.",
+    name: "Studio Workstations",
+    description: "Purpose-built workstation surfaces for chaos systems and CFD studies, with inspector rails, transport controls, and diagnostics.",
     accent: "#10b981",
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-6 h-6"><path d="M4 19V5l4 4 4-6 4 6 4-4v14"/></svg>`,
   },
   {
     name: "Multi-AI Chat",
-    description: "Converse with Claude, GPT, Gemini, DeepSeek, and Kimi about your simulation. Streaming with thinking support.",
+    description: "Converse with Claude, GPT, Gemini, DeepSeek, Kimi, Qwen, and MiniMax about your simulation. Streaming with thinking support.",
     accent: "#ec4899",
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-6 h-6"><path d="M12 2a7 7 0 0 1 7 7c0 3-2 5-4 6v2h-6v-2C7 14 5 12 5 9a7 7 0 0 1 7-7z"/><path d="M9 21h6"/></svg>`,
   },
@@ -78,7 +78,7 @@ export function renderAbout(container: HTMLElement, router: Router): void {
           </p>
           <div class="info-callout">
             <p class="text-sm text-zinc-300">
-              <strong class="text-blue-400">The gap we aim to close:</strong> interactive, trustworthy simulations are either locked behind lab software or rigid tools that can't be tweaked. Curious learners everywhere end up staring at static diagrams when they should be experimenting.
+              <strong class="text-blue-400">The gap we aim to close:</strong> interactive, trustworthy simulations are either locked behind expensive lab software or rigid tools that can't be tweaked. Curious learners end up staring at static diagrams when they should be experimenting.
             </p>
           </div>
           <p>
@@ -88,7 +88,7 @@ export function renderAbout(container: HTMLElement, router: Router): void {
             Our vision is straightforward: <strong class="text-zinc-200">make nonlinear dynamics part of everyday scientific literacy</strong>. You shouldn't need a research workstation or graduate coursework to appreciate a figure-eight orbit or a Lorenz attractor.
           </p>
           <p>
-            Browser-based labs remove the usual gatekeepers. Share a link, run it on a school Chromebook, or stream it in a lecture hall — the experience is the same. Learning becomes less about memorising formulas and more about prodding the system yourself.
+            A native desktop laboratory removes the usual gatekeepers. Install it on any computer, stream it in a lecture hall, or share your experiment data with a colleague — the experience is the same everywhere. Learning becomes less about memorising formulas and more about prodding the system yourself.
           </p>
         </div>
       </section>

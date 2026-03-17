@@ -1,0 +1,61 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grav-ring" x1="280" y1="320" x2="790" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F176B0"/>
+      <stop offset="0.52" stop-color="#D86AD4"/>
+      <stop offset="1" stop-color="#FFB15C"/>
+    </linearGradient>
+    <radialGradient id="grav-bg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(420 380) rotate(41) scale(760 760)">
+      <stop stop-color="#23212B"/>
+      <stop offset="0.6" stop-color="#14131A"/>
+      <stop offset="1" stop-color="#09090D"/>
+    </radialGradient>
+    <radialGradient id="grav-glow-pink" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(398 392) rotate(90) scale(320 320)">
+      <stop stop-color="#F176B0" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#F176B0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="grav-glow-orange" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(728 540) rotate(90) scale(280 280)">
+      <stop stop-color="#FFB15C" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#FFB15C" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="grav-soft-glow" x="0" y="0" width="1024" height="1024" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+
+  <rect x="64" y="64" width="896" height="896" rx="214" fill="url(#grav-bg)"/>
+  <rect x="64" y="64" width="896" height="896" rx="214" fill="url(#grav-glow-pink)"/>
+  <rect x="64" y="64" width="896" height="896" rx="214" fill="url(#grav-glow-orange)"/>
+
+  <g opacity="0.34">
+    <ellipse cx="508" cy="516" rx="278" ry="234" transform="rotate(-18 508 516)" stroke="white" stroke-opacity="0.08" stroke-width="8"/>
+    <ellipse cx="516" cy="512" rx="208" ry="318" transform="rotate(28 516 512)" stroke="white" stroke-opacity="0.05" stroke-width="6"/>
+  </g>
+
+  <g filter="url(#grav-soft-glow)">
+    <circle cx="350" cy="384" r="54" fill="#F176B0" fill-opacity="0.28"/>
+    <circle cx="340" cy="676" r="48" fill="#D86AD4" fill-opacity="0.22"/>
+    <circle cx="740" cy="510" r="58" fill="#FFB15C" fill-opacity="0.28"/>
+  </g>
+
+  <path d="M738 320C676 266 596 236 508 236C312 236 154 394 154 590C154 786 312 844 508 844C590 844 666 818 726 770" stroke="url(#grav-ring)" stroke-width="88" stroke-linecap="round"/>
+  <path d="M508 516H742" stroke="url(#grav-ring)" stroke-width="88" stroke-linecap="round"/>
+
+  <circle cx="350" cy="384" r="38" fill="#F176B0"/>
+  <circle cx="340" cy="676" r="34" fill="#D86AD4"/>
+  <circle cx="740" cy="510" r="42" fill="#FFB15C"/>
+  <circle cx="350" cy="384" r="16" fill="white" fill-opacity="0.9"/>
+  <circle cx="340" cy="676" r="14" fill="white" fill-opacity="0.86"/>
+  <circle cx="740" cy="510" r="18" fill="white" fill-opacity="0.9"/>
+
+  <g opacity="0.86">
+    <circle cx="236" cy="250" r="4" fill="white"/>
+    <circle cx="278" cy="176" r="2.5" fill="white" fill-opacity="0.72"/>
+    <circle cx="812" cy="254" r="3" fill="white" fill-opacity="0.78"/>
+    <circle cx="844" cy="350" r="2.5" fill="white" fill-opacity="0.64"/>
+    <circle cx="218" cy="748" r="2.5" fill="white" fill-opacity="0.62"/>
+    <circle cx="762" cy="804" r="3.5" fill="white" fill-opacity="0.72"/>
+    <circle cx="674" cy="180" r="2.5" fill="white" fill-opacity="0.52"/>
+    <circle cx="526" cy="158" r="3.5" fill="white" fill-opacity="0.8"/>
+  </g>
+</svg>

@@ -39,12 +39,23 @@ impl DoublePendulumSimulator {
             max_trail_length: 200,
             step_counter: Vec::new(),
         };
-        sim.add_pendulum(std::f64::consts::FRAC_PI_2, 0.0, std::f64::consts::FRAC_PI_2, 0.0);
+        sim.add_pendulum(
+            std::f64::consts::FRAC_PI_2,
+            0.0,
+            std::f64::consts::FRAC_PI_2,
+            0.0,
+        );
+        sim.add_pendulum(
+            std::f64::consts::FRAC_PI_2 + 0.015,
+            0.0,
+            std::f64::consts::FRAC_PI_2 - 0.015,
+            0.0,
+        );
         sim
     }
 
     pub fn add_pendulum(&mut self, theta1: f64, omega1: f64, theta2: f64, omega2: f64) {
-        if self.pendulums.len() >= 4 {
+        if self.pendulums.len() >= 8 {
             return;
         }
         self.pendulums.push(PendulumState {
@@ -162,8 +173,7 @@ impl DoublePendulumSimulator {
         let v2x = v1x + p.l2 * omega2 * theta2.cos();
         let v2y = v1y + p.l2 * omega2 * theta2.sin();
 
-        let ke = 0.5 * p.m1 * (v1x * v1x + v1y * v1y)
-            + 0.5 * p.m2 * (v2x * v2x + v2y * v2y);
+        let ke = 0.5 * p.m1 * (v1x * v1x + v1y * v1y) + 0.5 * p.m2 * (v2x * v2x + v2y * v2y);
         let pe = p.m1 * self.g * y1 + p.m2 * self.g * y2;
 
         ke + pe
@@ -209,7 +219,19 @@ impl DoublePendulumSimulator {
         }
     }
 
-    pub fn reset(&mut self, preset: &str) {
+    pub fn load_preset(&mut self, name: &str) {
+        // Map both JS and Rust preset names
+        let preset = match name {
+            "standard" | "default" => "default",
+            "chaotic" | "chaos" => "chaos",
+            "symmetric" | "asymmetric" => "asymmetric",
+            "gentle" | "spin" => "spin",
+            _ => "default",
+        };
+        self.reset_with_preset(preset);
+    }
+
+    fn reset_with_preset(&mut self, preset: &str) {
         self.time = 0.0;
         for (idx, p) in self.pendulums.iter_mut().enumerate() {
             p.trail.clear();
@@ -271,7 +293,7 @@ impl super::Simulator for DoublePendulumSimulator {
     }
 
     fn reset(&mut self) {
-        DoublePendulumSimulator::reset(self, "default");
+        DoublePendulumSimulator::reset_with_preset(self, "default");
     }
 
     fn get_state(&self) -> serde_json::Value {
@@ -306,7 +328,27 @@ impl super::Simulator for DoublePendulumSimulator {
         }
     }
 
+    fn load_preset(&mut self, name: &str) {
+        DoublePendulumSimulator::load_preset(self, name);
+    }
+
     fn export_data(&self) -> serde_json::Value {
         serde_json::to_value(self.get_state()).unwrap_or_default()
+    }
+
+    fn add_pendulum(
+        &mut self,
+        theta1: f64,
+        omega1: f64,
+        theta2: f64,
+        omega2: f64,
+    ) -> Result<serde_json::Value, String> {
+        DoublePendulumSimulator::add_pendulum(self, theta1, omega1, theta2, omega2);
+        Ok(serde_json::to_value(DoublePendulumSimulator::get_state(self)).unwrap_or_default())
+    }
+
+    fn remove_pendulum(&mut self, index: usize) -> Result<serde_json::Value, String> {
+        DoublePendulumSimulator::remove_pendulum(self, index);
+        Ok(serde_json::to_value(DoublePendulumSimulator::get_state(self)).unwrap_or_default())
     }
 }

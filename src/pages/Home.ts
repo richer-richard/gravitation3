@@ -131,30 +131,30 @@ const SIMULATIONS = [
 /* ── Tech features ── */
 const FEATURES = [
   {
-    title: "Rust + WebAssembly",
+    title: "Rust Physics Core",
     description:
-      "Physics engine compiled to WASM runs at near-native speed right in the browser. SIMD-accelerated vector math.",
+      "Native Rust simulation core with deterministic stepping, collision tracking, and desktop-class performance.",
     accent: "#3b82f6",
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-6 h-6"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,
   },
   {
     title: "AI-Powered Analysis",
     description:
-      "Chat with Claude, GPT, Gemini, DeepSeek, and Kimi about your simulation. Streaming responses with thinking support.",
+      "Chat with Claude, GPT, Gemini, DeepSeek, Kimi, Qwen, and MiniMax about your simulation. Streaming responses with thinking support.",
     accent: "#8b5cf6",
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-6 h-6"><path d="M12 2a7 7 0 0 1 7 7c0 3-2 5-4 6v2h-6v-2C7 14 5 12 5 9a7 7 0 0 1 7-7z"/><path d="M9 21h6"/><path d="M10 17h4"/></svg>`,
   },
   {
-    title: "ML Predictions",
+    title: "Studio Workstations",
     description:
-      "ONNX neural network models predict chaotic trajectories and classify system behaviour in real-time.",
+      "Dedicated production surfaces for chaos systems and CFD studies, with polished transport controls, inspectors, and diagnostics.",
     accent: "#10b981",
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-6 h-6"><path d="M4 19V5l4 4 4-6 4 6 4-4v14"/></svg>`,
   },
   {
     title: "Native Desktop App",
     description:
-      "Tauri-powered macOS app with native Rust physics and OS keychain integration. Zero WASM overhead.",
+      "Tauri-powered macOS app with native Rust physics, OS keychain integration, and zero browser bridge overhead.",
     accent: "#f59e0b",
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-6 h-6"><rect x="3" y="3" width="18" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
   },
@@ -170,8 +170,9 @@ export function renderHome(container: HTMLElement, _router: Router): void {
       <!-- ═══ NAV ═══ -->
       <nav class="fixed top-0 left-0 right-0 z-30 home-nav">
         <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <a href="/" data-link class="text-sm font-semibold tracking-wide text-zinc-300 hover:text-white transition-colors">
-            Gravitation<sup>3</sup>
+          <a href="/" data-link class="inline-flex items-center gap-2 text-sm font-semibold tracking-wide text-zinc-300 hover:text-white transition-colors">
+            <img src="/logo-mark.svg" alt="" class="w-5 h-5 rounded-[6px] shadow-[0_0_16px_rgba(241,118,176,0.18)]" />
+            <span>Gravitation<sup>3</sup></span>
           </a>
           <div class="flex items-center gap-6 text-xs text-zinc-500">
             <a href="/explore" data-link class="hover:text-zinc-200 transition-colors">Explore</a>
@@ -211,7 +212,7 @@ export function renderHome(container: HTMLElement, _router: Router): void {
         <!-- Description -->
         <p class="hero-tagline mt-8 text-base sm:text-lg text-zinc-400 max-w-xl leading-relaxed">
           Interactive physics simulations powered by <span class="text-zinc-200 font-medium">Rust</span>,
-          <span class="text-zinc-200 font-medium">WebAssembly</span>, and
+          <span class="text-zinc-200 font-medium">native desktop performance</span>, and
           <span class="text-zinc-200 font-medium">AI</span>.<br/>
           Explore chaos, beauty, and the mathematics of nature.
         </p>

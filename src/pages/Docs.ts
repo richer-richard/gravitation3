@@ -13,7 +13,7 @@ const SECTIONS: DocSection[] = [
     id: "getting-started",
     title: "Getting Started",
     html: `
-      <p>Welcome to <strong class="text-zinc-200">Gravitation&sup3;</strong> — your interactive physics laboratory running entirely in the browser.</p>
+      <p>Welcome to <strong class="text-zinc-200">Gravitation&sup3;</strong> — your interactive physics laboratory running as a native desktop app.</p>
       <h4 class="text-sm font-semibold text-zinc-200 mt-4 mb-2">Your First Simulation</h4>
       <ol class="list-decimal pl-5 space-y-1">
         <li>Navigate to the <a href="/explore" data-link class="text-blue-400 hover:text-blue-300">Explore</a> page</li>
@@ -129,10 +129,12 @@ const SECTIONS: DocSection[] = [
       <h4 class="text-sm font-semibold text-zinc-200 mt-4 mb-2">Supported Providers</h4>
       <ul class="list-disc pl-5 space-y-1">
         <li><strong class="text-zinc-200">Anthropic</strong> — Claude Sonnet 4.6, Claude Haiku</li>
-        <li><strong class="text-zinc-200">OpenAI</strong> — GPT-4o, GPT-4o-mini</li>
-        <li><strong class="text-zinc-200">Google</strong> — Gemini 2.0 Flash, Gemini Pro</li>
-        <li><strong class="text-zinc-200">DeepSeek</strong> — DeepSeek-V3, DeepSeek-R1</li>
-        <li><strong class="text-zinc-200">Moonshot</strong> — Kimi models</li>
+        <li><strong class="text-zinc-200">OpenAI</strong> — GPT-4.1, o3, o4-mini</li>
+        <li><strong class="text-zinc-200">Google</strong> — Gemini 2.5 Pro, Gemini 2.5 Flash</li>
+        <li><strong class="text-zinc-200">DeepSeek</strong> — DeepSeek Chat, DeepSeek Reasoner</li>
+        <li><strong class="text-zinc-200">Moonshot</strong> — Kimi K2</li>
+        <li><strong class="text-zinc-200">Qwen</strong> — Qwen Max, Qwen Plus</li>
+        <li><strong class="text-zinc-200">MiniMax</strong> — MiniMax M2.5, MiniMax M1</li>
       </ul>
 
       <h4 class="text-sm font-semibold text-zinc-200 mt-4 mb-2">What to Ask</h4>
@@ -171,17 +173,14 @@ const SECTIONS: DocSection[] = [
       <h4 class="text-sm font-semibold text-zinc-200 mt-1 mb-2">Prerequisites</h4>
       <ul class="list-disc pl-5 space-y-1">
         <li>Node.js 18+ and npm</li>
-        <li>Rust toolchain (for WASM compilation)</li>
-        <li><code class="text-xs bg-white/[0.06] px-1.5 py-0.5 rounded">wasm-pack</code> — install with <code class="text-xs bg-white/[0.06] px-1.5 py-0.5 rounded">cargo install wasm-pack</code></li>
+        <li>Rust toolchain (for the native physics engine and Tauri app)</li>
       </ul>
 
       <h4 class="text-sm font-semibold text-zinc-200 mt-4 mb-2">Quick Start</h4>
       <div class="rounded-lg border border-white/[0.06] bg-black/20 p-4 font-mono text-xs space-y-1.5 text-zinc-300">
         <p class="text-zinc-500"># Install dependencies</p>
         <p>npm install</p>
-        <p class="text-zinc-500 mt-2"># Build WASM physics engine</p>
-        <p>npm run build:wasm</p>
-        <p class="text-zinc-500 mt-2"># Start dev server (Vite)</p>
+        <p class="text-zinc-500 mt-2"># Start the native desktop app</p>
         <p>npm run dev</p>
         <p class="text-zinc-500 mt-2"># Build for production</p>
         <p>npm run build</p>
@@ -190,14 +189,14 @@ const SECTIONS: DocSection[] = [
       <h4 class="text-sm font-semibold text-zinc-200 mt-4 mb-2">Tauri Desktop App</h4>
       <div class="rounded-lg border border-white/[0.06] bg-black/20 p-4 font-mono text-xs space-y-1.5 text-zinc-300">
         <p class="text-zinc-500"># Development</p>
-        <p>npm run tauri:dev</p>
+        <p>npm run dev</p>
         <p class="text-zinc-500 mt-2"># Build release</p>
-        <p>npm run tauri:build</p>
+        <p>npm run build</p>
       </div>
 
       <h4 class="text-sm font-semibold text-zinc-200 mt-4 mb-2">Server (for AI proxy)</h4>
       <div class="rounded-lg border border-white/[0.06] bg-black/20 p-4 font-mono text-xs space-y-1.5 text-zinc-300">
-        <p>npm run server:dev</p>
+        <p>npm run server</p>
       </div>
       <p class="mt-2">The Axum server proxies AI API calls (to avoid CORS issues) and runs on port 5001 by default.</p>
     `,

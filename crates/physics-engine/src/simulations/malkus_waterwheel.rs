@@ -65,7 +65,9 @@ impl MalkusWheelSimulator {
         let domega = torque - self.nu * omega;
         let dtheta = omega;
 
-        let threshold = (2.0 * std::f64::consts::PI / self.num_buckets as f64).cos().abs();
+        let threshold = (2.0 * std::f64::consts::PI / self.num_buckets as f64)
+            .cos()
+            .abs();
         let dmasses: Vec<f64> = masses
             .iter()
             .enumerate()
@@ -97,37 +99,36 @@ impl MalkusWheelSimulator {
         let (do1, dt1, dm1) = self.derivatives(omega, theta, &masses);
 
         // k2
-        let m2: Vec<f64> = masses.iter().zip(dm1.iter()).map(|(m, dm)| m + 0.5 * dt * dm).collect();
-        let (do2, dt2, dm2) = self.derivatives(
-            omega + 0.5 * dt * do1,
-            theta + 0.5 * dt * dt1,
-            &m2,
-        );
+        let m2: Vec<f64> = masses
+            .iter()
+            .zip(dm1.iter())
+            .map(|(m, dm)| m + 0.5 * dt * dm)
+            .collect();
+        let (do2, dt2, dm2) = self.derivatives(omega + 0.5 * dt * do1, theta + 0.5 * dt * dt1, &m2);
 
         // k3
-        let m3: Vec<f64> = masses.iter().zip(dm2.iter()).map(|(m, dm)| m + 0.5 * dt * dm).collect();
-        let (do3, dt3, dm3) = self.derivatives(
-            omega + 0.5 * dt * do2,
-            theta + 0.5 * dt * dt2,
-            &m3,
-        );
+        let m3: Vec<f64> = masses
+            .iter()
+            .zip(dm2.iter())
+            .map(|(m, dm)| m + 0.5 * dt * dm)
+            .collect();
+        let (do3, dt3, dm3) = self.derivatives(omega + 0.5 * dt * do2, theta + 0.5 * dt * dt2, &m3);
 
         // k4
-        let m4: Vec<f64> = masses.iter().zip(dm3.iter()).map(|(m, dm)| m + dt * dm).collect();
-        let (do4, dt4, dm4) = self.derivatives(
-            omega + dt * do3,
-            theta + dt * dt3,
-            &m4,
-        );
+        let m4: Vec<f64> = masses
+            .iter()
+            .zip(dm3.iter())
+            .map(|(m, dm)| m + dt * dm)
+            .collect();
+        let (do4, dt4, dm4) = self.derivatives(omega + dt * do3, theta + dt * dt3, &m4);
 
         let dt6 = dt / 6.0;
         self.omega = omega + dt6 * (do1 + 2.0 * do2 + 2.0 * do3 + do4);
         self.theta = theta + dt6 * (dt1 + 2.0 * dt2 + 2.0 * dt3 + dt4);
 
         for i in 0..self.num_buckets {
-            self.bucket_masses[i] = (masses[i]
-                + dt6 * (dm1[i] + 2.0 * dm2[i] + 2.0 * dm3[i] + dm4[i]))
-                .max(0.0);
+            self.bucket_masses[i] =
+                (masses[i] + dt6 * (dm1[i] + 2.0 * dm2[i] + 2.0 * dm3[i] + dm4[i])).max(0.0);
         }
     }
 
@@ -201,12 +202,15 @@ impl super::Simulator for MalkusWheelSimulator {
     }
     fn set_parameter(&mut self, name: &str, value: f64) {
         match name {
-            "Q" | "q" => self.q = value,
-            "K" | "k" => self.k = value,
-            "nu" => self.nu = value,
+            "inflow_rate" | "Q" | "q" => self.q = value,
+            "leak_rate" | "K" | "k" => self.k = value,
+            "damping" | "nu" => self.nu = value,
             "dt" => self.dt = value,
             _ => {}
         }
+    }
+    fn load_preset(&mut self, name: &str) {
+        MalkusWheelSimulator::load_preset(self, name);
     }
     fn export_data(&self) -> serde_json::Value {
         serde_json::to_value(self.get_state()).unwrap_or_default()

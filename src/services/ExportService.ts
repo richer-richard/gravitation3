@@ -3,6 +3,12 @@
  * Uses native Tauri dialogs when available, falls back to browser APIs.
  */
 
+import { open, save } from "@tauri-apps/plugin-dialog";
+import {
+  readTextFile,
+  writeFile,
+  writeTextFile,
+} from "@tauri-apps/plugin-fs";
 import { IS_TAURI } from "../utils/tauri-bridge";
 
 export interface ExportData {
@@ -24,8 +30,6 @@ export async function exportState(simulationType: string, state: unknown): Promi
 
   if (IS_TAURI) {
     try {
-      const { save } = await import("@tauri-apps/plugin-dialog");
-      const { writeTextFile } = await import("@tauri-apps/plugin-fs");
       const path = await save({
         defaultPath: `gravitation3-${simulationType}-${Date.now()}.json`,
         filters: [{ name: "JSON", extensions: ["json"] }],
@@ -49,8 +53,6 @@ export async function exportState(simulationType: string, state: unknown): Promi
 export async function importState(): Promise<ExportData | null> {
   if (IS_TAURI) {
     try {
-      const { open } = await import("@tauri-apps/plugin-dialog");
-      const { readTextFile } = await import("@tauri-apps/plugin-fs");
       const path = await open({
         filters: [{ name: "JSON", extensions: ["json"] }],
         multiple: false,
@@ -88,8 +90,6 @@ export async function importState(): Promise<ExportData | null> {
 export async function takeScreenshot(canvas: HTMLCanvasElement): Promise<void> {
   if (IS_TAURI) {
     try {
-      const { save } = await import("@tauri-apps/plugin-dialog");
-      const { writeBinaryFile } = await import("@tauri-apps/plugin-fs");
       const path = await save({
         defaultPath: `gravitation3-screenshot-${Date.now()}.png`,
         filters: [{ name: "PNG Image", extensions: ["png"] }],
@@ -98,7 +98,7 @@ export async function takeScreenshot(canvas: HTMLCanvasElement): Promise<void> {
         const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
         if (blob) {
           const buffer = await blob.arrayBuffer();
-          await writeBinaryFile(path, new Uint8Array(buffer));
+          await writeFile(path, new Uint8Array(buffer));
         }
       }
       return;

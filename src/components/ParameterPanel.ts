@@ -9,6 +9,7 @@ import type { SimulationManager } from "../simulations/SimulationManager";
 interface ParamDef {
   name: string;
   label: string;
+  section: string;
   min: number;
   max: number;
   step: number;
@@ -18,40 +19,46 @@ interface ParamDef {
 
 const PARAMS: Record<SimulationType, ParamDef[]> = {
   "three-body": [
-    { name: "G", label: "Gravity (G)", min: 0.01, max: 100, step: 0.01, default: 1, tooltip: "Gravitational constant controlling attraction strength" },
-    { name: "dt", label: "Time Step", min: 0.001, max: 0.05, step: 0.001, default: 0.005, tooltip: "Integration timestep — smaller is more accurate but slower" },
+    { name: "G", label: "Gravity (G)", section: "Field", min: 0.01, max: 100, step: 0.01, default: 1, tooltip: "Gravitational constant controlling attraction strength" },
+    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.005, tooltip: "Integration timestep — smaller is more accurate but slower" },
   ],
   "double-pendulum": [
-    { name: "g", label: "Gravity (g)", min: 1, max: 20, step: 0.1, default: 9.81, tooltip: "Gravitational acceleration (m/s²)" },
-    { name: "dt", label: "Time Step", min: 0.001, max: 0.05, step: 0.001, default: 0.005, tooltip: "Integration timestep" },
-    { name: "l1", label: "Length 1", min: 0.1, max: 3, step: 0.1, default: 1, tooltip: "Length of the first pendulum arm" },
-    { name: "l2", label: "Length 2", min: 0.1, max: 3, step: 0.1, default: 1, tooltip: "Length of the second pendulum arm" },
-    { name: "m1", label: "Mass 1", min: 0.1, max: 10, step: 0.1, default: 1, tooltip: "Mass of the first bob" },
-    { name: "m2", label: "Mass 2", min: 0.1, max: 10, step: 0.1, default: 1, tooltip: "Mass of the second bob" },
+    { name: "g", label: "Gravity (g)", section: "Solver", min: 1, max: 20, step: 0.1, default: 9.81, tooltip: "Gravitational acceleration (m/s²)" },
+    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.02, tooltip: "Integration timestep" },
+    { name: "l1", label: "Length 1", section: "Geometry", min: 0.1, max: 3, step: 0.1, default: 1, tooltip: "Length of the first pendulum arm" },
+    { name: "l2", label: "Length 2", section: "Geometry", min: 0.1, max: 3, step: 0.1, default: 1, tooltip: "Length of the second pendulum arm" },
+    { name: "m1", label: "Mass 1", section: "Masses", min: 0.1, max: 10, step: 0.1, default: 1, tooltip: "Mass of the first bob" },
+    { name: "m2", label: "Mass 2", section: "Masses", min: 0.1, max: 10, step: 0.1, default: 1, tooltip: "Mass of the second bob" },
   ],
   lorenz: [
-    { name: "sigma", label: "Sigma (σ)", min: 0, max: 50, step: 0.1, default: 10, tooltip: "Prandtl number — ratio of momentum to thermal diffusivity" },
-    { name: "rho", label: "Rho (ρ)", min: 0, max: 100, step: 0.1, default: 28, tooltip: "Rayleigh number — chaos onset at ρ ≈ 24.74" },
-    { name: "beta", label: "Beta (β)", min: 0, max: 20, step: 0.01, default: 2.667, tooltip: "Geometric factor of the convection cell" },
-    { name: "dt", label: "Time Step", min: 0.001, max: 0.05, step: 0.001, default: 0.005, tooltip: "Integration timestep" },
+    { name: "sigma", label: "Sigma (σ)", section: "Dynamics", min: 0, max: 50, step: 0.1, default: 10, tooltip: "Prandtl number — ratio of momentum to thermal diffusivity" },
+    { name: "rho", label: "Rho (ρ)", section: "Dynamics", min: 0, max: 100, step: 0.1, default: 28, tooltip: "Rayleigh number — chaos onset at ρ ≈ 24.74" },
+    { name: "beta", label: "Beta (β)", section: "Dynamics", min: 0, max: 20, step: 0.01, default: 2.667, tooltip: "Geometric factor of the convection cell" },
+    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.005, tooltip: "Integration timestep" },
   ],
   rossler: [
-    { name: "a", label: "a", min: 0, max: 1, step: 0.01, default: 0.2, tooltip: "Controls rotation speed in the x-y plane" },
-    { name: "b", label: "b", min: 0, max: 1, step: 0.01, default: 0.2, tooltip: "Controls the z-axis dynamics" },
-    { name: "c", label: "c", min: 0, max: 30, step: 0.1, default: 5.7, tooltip: "Period-doubling route to chaos as c increases" },
-    { name: "dt", label: "Time Step", min: 0.001, max: 0.05, step: 0.001, default: 0.01, tooltip: "Integration timestep" },
+    { name: "a", label: "a", section: "Dynamics", min: 0, max: 1, step: 0.01, default: 0.2, tooltip: "Controls rotation speed in the x-y plane" },
+    { name: "b", label: "b", section: "Dynamics", min: 0, max: 1, step: 0.01, default: 0.2, tooltip: "Controls the z-axis dynamics" },
+    { name: "c", label: "c", section: "Dynamics", min: 0, max: 30, step: 0.1, default: 5.7, tooltip: "Period-doubling route to chaos as c increases" },
+    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.01, tooltip: "Integration timestep" },
   ],
   "double-gyre": [
-    { name: "A", label: "Amplitude (A)", min: 0, max: 1, step: 0.01, default: 0.1, tooltip: "Flow amplitude" },
-    { name: "epsilon", label: "Epsilon (ε)", min: 0, max: 1, step: 0.01, default: 0.25, tooltip: "Perturbation strength — 0 gives steady gyres" },
-    { name: "omega", label: "Omega (ω)", min: 0, max: 10, step: 0.1, default: 6.283, tooltip: "Oscillation frequency (2π ≈ period of 1)" },
-    { name: "dt", label: "Time Step", min: 0.001, max: 0.05, step: 0.001, default: 0.01, tooltip: "Integration timestep" },
+    { name: "A", label: "Amplitude (A)", section: "Flow", min: 0, max: 1, step: 0.01, default: 0.1, tooltip: "Flow amplitude" },
+    { name: "epsilon", label: "Epsilon (ε)", section: "Flow", min: 0, max: 1, step: 0.01, default: 0.25, tooltip: "Perturbation strength — 0 gives steady gyres" },
+    { name: "omega", label: "Omega (ω)", section: "Flow", min: 0, max: 10, step: 0.1, default: 6.283, tooltip: "Oscillation frequency (2π ≈ period of 1)" },
+    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.01, tooltip: "Integration timestep" },
+  ],
+  "lid-driven-cavity": [
+    { name: "reynolds", label: "Reynolds Number", section: "Flow", min: 50, max: 5000, step: 10, default: 400, tooltip: "Inertial-to-viscous ratio controlling vortex structure" },
+    { name: "lid_velocity", label: "Lid Velocity", section: "Boundary", min: 0.1, max: 2.5, step: 0.05, default: 1, tooltip: "Speed of the moving top wall" },
+    { name: "viscosity", label: "Viscosity", section: "Flow", min: 0.0001, max: 0.05, step: 0.0001, default: 0.0025, tooltip: "Kinematic viscosity used by the cavity solver" },
+    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.03, step: 0.001, default: 0.01, tooltip: "Solver timestep" },
   ],
   "malkus-waterwheel": [
-    { name: "inflow_rate", label: "Inflow Rate", min: 0, max: 20, step: 0.1, default: 5, tooltip: "Water inflow rate at the top" },
-    { name: "leak_rate", label: "Leak Rate", min: 0, max: 10, step: 0.1, default: 1, tooltip: "Rate at which water leaks from buckets" },
-    { name: "damping", label: "Damping", min: 0, max: 5, step: 0.01, default: 0.5, tooltip: "Viscous friction on the wheel axle" },
-    { name: "dt", label: "Time Step", min: 0.001, max: 0.05, step: 0.001, default: 0.01, tooltip: "Integration timestep" },
+    { name: "inflow_rate", label: "Inflow Rate", section: "Wheel", min: 0, max: 20, step: 0.1, default: 5, tooltip: "Water inflow rate at the top" },
+    { name: "leak_rate", label: "Leak Rate", section: "Wheel", min: 0, max: 10, step: 0.1, default: 1, tooltip: "Rate at which water leaks from buckets" },
+    { name: "damping", label: "Damping", section: "Wheel", min: 0, max: 5, step: 0.01, default: 0.5, tooltip: "Viscous friction on the wheel axle" },
+    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.01, tooltip: "Integration timestep" },
   ],
 };
 
@@ -75,17 +82,37 @@ export class ParameterPanel {
 
   render(): void {
     const params = PARAMS[this.simType] || [];
+    const sectionOrder = [...new Set(params.map((param) => param.section))];
     this.container.innerHTML = `
-      <div class="space-y-3 p-2">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Parameters</h3>
-          <div class="flex gap-1">
-            <button class="param-save-preset px-2 py-0.5 text-[10px] bg-zinc-700 hover:bg-zinc-600 text-zinc-400 rounded" title="Save current values as preset">Save</button>
-            <button class="param-reset-all px-2 py-0.5 text-[10px] bg-zinc-700 hover:bg-zinc-600 text-zinc-400 rounded" title="Reset all to defaults">Reset</button>
+      <div class="studio-panel-stack">
+        <div class="studio-section studio-section-tight">
+          <div class="studio-section-heading">
+            <div>
+              <p class="studio-kicker">Inspector</p>
+              <h3 class="studio-section-title">Solver Parameters</h3>
+            </div>
+            <div class="studio-inline-actions">
+              <button class="param-save-preset studio-chip-button" title="Save current values as preset">Save Preset</button>
+              <button class="param-reset-all studio-chip-button" title="Reset all to defaults">Reset</button>
+            </div>
           </div>
+          <div class="param-presets-bar"></div>
         </div>
-        <div class="param-presets-bar"></div>
-        ${params.map((p) => this.renderSlider(p)).join("")}
+        ${sectionOrder
+          .map((section) => {
+            const sectionParams = params.filter((param) => param.section === section);
+            return `
+              <div class="studio-section">
+                <div class="studio-subsection-heading">
+                  <p class="studio-subsection-kicker">${section}</p>
+                </div>
+                <div class="studio-slider-list">
+                  ${sectionParams.map((param) => this.renderSlider(param)).join("")}
+                </div>
+              </div>
+            `;
+          })
+          .join("")}
       </div>
     `;
 
@@ -166,17 +193,18 @@ export class ParameterPanel {
 
   private renderSlider(param: ParamDef): string {
     const tooltipIcon = param.tooltip
-      ? `<span class="text-zinc-500 cursor-help ml-1" title="${param.tooltip}">&#9432;</span>`
+      ? `<span class="studio-param-hint" title="${param.tooltip}">&#9432;</span>`
       : "";
     return `
-      <div data-param="${param.name}" class="space-y-1">
-        <div class="flex justify-between items-center">
-          <label class="text-xs text-zinc-300">${param.label}${tooltipIcon}</label>
+      <div data-param="${param.name}" class="studio-slider-card">
+        <div class="studio-slider-header">
+          <label class="studio-slider-label">${param.label}${tooltipIcon}</label>
           <input type="number" value="${param.default}" min="${param.min}" max="${param.max}" step="${param.step}"
-            class="w-20 bg-zinc-800 text-zinc-300 text-xs rounded px-2 py-0.5 border border-zinc-600 text-right" />
+            class="studio-slider-value" />
         </div>
+        ${param.tooltip ? `<p class="studio-slider-copy">${param.tooltip}</p>` : ""}
         <input type="range" value="${param.default}" min="${param.min}" max="${param.max}" step="${param.step}"
-          class="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-500" />
+          class="studio-slider-input" />
       </div>
     `;
   }
@@ -190,9 +218,9 @@ export class ParameterPanel {
       return;
     }
     bar.innerHTML = `
-      <div class="flex flex-wrap gap-1 mb-2">
+      <div class="studio-preset-strip">
         ${presets.map((name) => `
-          <button class="preset-load px-2 py-0.5 text-[10px] bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded border border-blue-500/20" data-preset-name="${name}">${name}</button>
+          <button class="preset-load studio-pill-button" data-preset-name="${name}">${name}</button>
         `).join("")}
       </div>
     `;

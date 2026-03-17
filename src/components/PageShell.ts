@@ -25,8 +25,9 @@ export function createPageShell(
       <!-- ═══ NAV ═══ -->
       <nav class="fixed top-0 left-0 right-0 z-30 page-nav">
         <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <a href="/" data-link class="text-sm font-semibold tracking-wide text-zinc-300 hover:text-white transition-colors">
-            Gravitation<sup>3</sup>
+          <a href="/" data-link class="inline-flex items-center gap-2 text-sm font-semibold tracking-wide text-zinc-300 hover:text-white transition-colors">
+            <img src="/logo-mark.svg" alt="" class="w-5 h-5 rounded-[6px] shadow-[0_0_16px_rgba(241,118,176,0.18)]" />
+            <span>Gravitation<sup>3</sup></span>
           </a>
           <div class="flex items-center gap-6 text-xs text-zinc-500">
             <a href="/explore" data-link class="hover:text-zinc-200 transition-colors">Explore</a>

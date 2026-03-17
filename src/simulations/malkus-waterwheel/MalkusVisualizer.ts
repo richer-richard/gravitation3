@@ -2,26 +2,23 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { SimulationVisualizer } from "../SimulationManager";
 
-interface BucketState {
-  angle: number;
-  mass: number;
-}
-
 interface MalkusState {
   omega: number;
   theta: number;
-  buckets: BucketState[];
+  bucket_masses: number[];
   time: number;
-  inflow_rate: number;
-  leak_rate: number;
-  damping: number;
   omega_history: number[];
   theta_history: number[];
+  q: number;
+  k: number;
+  nu: number;
+  num_buckets: number;
 }
 
 interface BucketVisual {
   group: THREE.Group;
   water: THREE.Mesh;
+  spoke: THREE.Mesh;
 }
 
 const BG_COLOR = 0x0a0e27;
@@ -99,25 +96,24 @@ export class MalkusVisualizer implements SimulationVisualizer {
     this.scene.add(this.wheelGroup);
 
     // Hub
-    const hubGeo = new THREE.SphereGeometry(0.06, 16, 16);
-    const hubMat = new THREE.MeshBasicMaterial({
-      color: 0x4a5568,
-      transparent: true,
-      opacity: 0.6,
+    const hubGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.1, 32);
+    const hubMat = new THREE.MeshStandardMaterial({
+      color: 0x64748b,
+      metalness: 0.7,
+      roughness: 0.3,
     });
     this.hub = new THREE.Mesh(hubGeo, hubMat);
-    this.hub.renderOrder = -10;
+    this.hub.rotation.x = Math.PI / 2;
     this.wheelGroup.add(this.hub);
 
     // Rim
     const rimGeo = new THREE.TorusGeometry(this.wheelRadius, 0.05, 16, 64);
     const rimMat = new THREE.MeshStandardMaterial({
-      color: 0x4a5568,
+      color: 0x64748b,
       metalness: 0.6,
       roughness: 0.4,
     });
     this.rim = new THREE.Mesh(rimGeo, rimMat);
-    this.rim.renderOrder = -1;
     this.wheelGroup.add(this.rim);
 
     // COM marker
@@ -131,15 +127,15 @@ export class MalkusVisualizer implements SimulationVisualizer {
     this.comMarker.renderOrder = 10;
     this.scene.add(this.comMarker);
 
-    // Drip indicator
-    const dripGeo = new THREE.SphereGeometry(0.08, 16, 16);
-    const dripMat = new THREE.MeshBasicMaterial({
-      color: 0x00d4ff,
-      transparent: true,
-      opacity: 0.8,
+    // Drip indicator (faucet) at top
+    const dripGeo = new THREE.CylinderGeometry(0.06, 0.04, 0.2, 8);
+    const dripMat = new THREE.MeshStandardMaterial({
+      color: 0x475569,
+      metalness: 0.5,
+      roughness: 0.4,
     });
     this.dripIndicator = new THREE.Mesh(dripGeo, dripMat);
-    this.dripIndicator.position.set(0, 2.5, 0);
+    this.dripIndicator.position.set(0, this.wheelRadius + 0.4, 0);
     this.scene.add(this.dripIndicator);
 
     this.renderLoop();
@@ -149,6 +145,7 @@ export class MalkusVisualizer implements SimulationVisualizer {
     while (this.bucketVisuals.length > count) {
       const bv = this.bucketVisuals.pop()!;
       this.wheelGroup.remove(bv.group);
+      this.wheelGroup.remove(bv.spoke);
     }
 
     while (this.bucketVisuals.length < count) {
@@ -221,52 +218,79 @@ export class MalkusVisualizer implements SimulationVisualizer {
       water.scale.y = 0;
       group.add(water);
 
+      // Spoke from hub to bucket
+      const spokeGeo = new THREE.CylinderGeometry(0.015, 0.015, this.wheelRadius, 6);
+      const spokeMat = new THREE.MeshStandardMaterial({
+        color: 0x64748b,
+        metalness: 0.5,
+        roughness: 0.4,
+      });
+      const spoke = new THREE.Mesh(spokeGeo, spokeMat);
+      this.wheelGroup.add(spoke);
+
       this.wheelGroup.add(group);
-      this.bucketVisuals.push({ group, water });
+      this.bucketVisuals.push({ group, water, spoke });
     }
   }
 
   update(state: unknown): void {
     const s = state as MalkusState;
-    if (!s?.buckets) return;
+    if (!s?.bucket_masses) return;
 
-    this.ensureBuckets(s.buckets.length);
+    const numBuckets = s.num_buckets || s.bucket_masses.length;
+    this.ensureBuckets(numBuckets);
 
     // Rotate wheel
     this.wheelGroup.rotation.z = s.theta;
 
     // Find max mass for scaling
     let maxMass = 0;
-    for (const b of s.buckets) {
-      if (b.mass > maxMass) maxMass = b.mass;
+    for (const m of s.bucket_masses) {
+      if (m > maxMass) maxMass = m;
     }
 
     let comX = 0;
     let comY = 0;
     let totalMass = 0;
 
-    for (let i = 0; i < s.buckets.length; i++) {
-      const bucket = s.buckets[i];
+    for (let i = 0; i < numBuckets; i++) {
+      const mass = s.bucket_masses[i] || 0;
       const bv = this.bucketVisuals[i];
 
-      // Position bucket on wheel
-      const angle = bucket.angle + s.theta;
-      const bx = this.wheelRadius * Math.sin(angle);
-      const by = -this.wheelRadius * Math.cos(angle);
+      // Compute bucket angle (evenly spaced around wheel, offset by theta)
+      const bucketAngle = (2 * Math.PI * i) / numBuckets;
+      const bx = this.wheelRadius * Math.sin(bucketAngle);
+      const by = -this.wheelRadius * Math.cos(bucketAngle);
       bv.group.position.set(bx, by, 0);
 
       // Keep bucket upright (counter-rotate against wheel)
       bv.group.rotation.z = -s.theta;
 
+      // Position spoke from hub to bucket
+      const spokeMidX = bx * 0.5;
+      const spokeMidY = by * 0.5;
+      bv.spoke.position.set(spokeMidX, spokeMidY, 0);
+      bv.spoke.rotation.z = -bucketAngle;
+      bv.spoke.scale.y = 1;
+
       // Water level
-      const waterScale = maxMass > 0 ? bucket.mass / maxMass : 0;
+      const waterScale = maxMass > 0.001 ? mass / maxMass : 0;
       bv.water.scale.y = waterScale;
       bv.water.position.y = -0.14 + waterScale * 0.125;
 
-      // COM calculation
-      comX += bx * bucket.mass;
-      comY += by * bucket.mass;
-      totalMass += bucket.mass;
+      // Color water by fill level
+      const waterMat = bv.water.material as THREE.MeshStandardMaterial;
+      const intensity = 0.3 + waterScale * 0.7;
+      waterMat.opacity = 0.4 + waterScale * 0.5;
+      waterMat.emissiveIntensity = intensity * 0.15;
+
+      // COM calculation (in world space — apply theta rotation)
+      const worldAngle = bucketAngle + s.theta;
+      const wx = this.wheelRadius * Math.sin(worldAngle);
+      const wy = -this.wheelRadius * Math.cos(worldAngle);
+      comX += wx * mass;
+      comY += wy * mass;
+      totalMass += mass;
     }
 
     // Update COM marker
@@ -321,7 +345,7 @@ export class MalkusVisualizer implements SimulationVisualizer {
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(
       (Math.random() - 0.5) * 0.15,
-      2.5,
+      this.wheelRadius + 0.2,
       (Math.random() - 0.5) * 0.15
     );
     this.scene.add(mesh);
@@ -346,6 +370,16 @@ export class MalkusVisualizer implements SimulationVisualizer {
         (d.mesh.material as THREE.Material).dispose();
         this.droplets.splice(i, 1);
       }
+    }
+  }
+
+  clearTrails(): void {
+    this.comTrail.length = 0;
+    if (this.comLine) {
+      this.scene.remove(this.comLine);
+      this.comLine.geometry.dispose();
+      (this.comLine.material as THREE.Material).dispose();
+      this.comLine = null;
     }
   }
 
@@ -374,6 +408,7 @@ export class MalkusVisualizer implements SimulationVisualizer {
 
     for (const bv of this.bucketVisuals) {
       this.wheelGroup.remove(bv.group);
+      this.wheelGroup.remove(bv.spoke);
     }
     this.bucketVisuals = [];
 

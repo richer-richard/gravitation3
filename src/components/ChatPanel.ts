@@ -110,12 +110,21 @@ export class ChatPanel {
   }
 
   private buildModelOptions(): string {
-    const providers = ["anthropic", "openai", "gemini", "deepseek", "moonshot"];
+    const providers = ["anthropic", "openai", "google", "deepseek", "moonshot", "qwen", "minimax"];
     let html = "";
     for (const provider of providers) {
       const models = getModelsForProvider(provider);
       if (models.length > 0) {
-        html += `<optgroup label="${provider.charAt(0).toUpperCase() + provider.slice(1)}">`;
+        const label = provider === "google"
+          ? "Google"
+          : provider === "moonshot"
+            ? "Moonshot"
+            : provider === "qwen"
+              ? "Qwen"
+              : provider === "minimax"
+                ? "MiniMax"
+                : provider.charAt(0).toUpperCase() + provider.slice(1);
+        html += `<optgroup label="${label}">`;
         for (const m of models) {
           html += `<option value="${m.id}">${m.displayName}</option>`;
         }

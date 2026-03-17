@@ -247,6 +247,10 @@ export class ThreeBodyVisualizer implements SimulationVisualizer {
       // Update position
       bv.mesh.position.set(x, y, z);
 
+      // Scale sphere by mass (cube root for volume scaling)
+      const massScale = Math.cbrt(body.mass);
+      bv.mesh.scale.setScalar(massScale);
+
       // Update trail
       const trail = bv.trail;
       trail.positions.push(new THREE.Vector3(x, y, z));
@@ -283,6 +287,16 @@ export class ThreeBodyVisualizer implements SimulationVisualizer {
         }
       } else {
         bv.arrow.visible = false;
+      }
+    }
+
+    // Wire collision effects from Rust data
+    const stateAny = s as Record<string, unknown>;
+    const recentCollisions = stateAny.recent_collisions as { position: number[]; body1_name: string; body2_name: string; combined_mass: number }[] | undefined;
+    if (recentCollisions && recentCollisions.length > 0) {
+      for (const collision of recentCollisions) {
+        const pos = new THREE.Vector3(collision.position[0], collision.position[1], collision.position[2]);
+        this.spawnCollisionEffect(pos, 0xff6b6b, 0x4ecdc4);
       }
     }
 

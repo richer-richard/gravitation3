@@ -32,11 +32,7 @@ struct LyapunovTracker {
 impl LyapunovTracker {
     fn new(initial: [f64; 3], perturbation: f64) -> Self {
         Self {
-            shadow: [
-                initial[0] + perturbation,
-                initial[1],
-                initial[2],
-            ],
+            shadow: [initial[0] + perturbation, initial[1], initial[2]],
             sum_log: 0.0,
             count: 0,
             perturbation,
@@ -111,11 +107,7 @@ impl RosslerSimulator {
     /// dx/dt = -y - z, dy/dt = x + ay, dz/dt = b + z(x - c)
     fn rossler_derivatives(&self, state: &[f64; 3]) -> [f64; 3] {
         let [x, y, z] = *state;
-        [
-            -y - z,
-            x + self.a * y,
-            self.b + z * (x - self.c),
-        ]
+        [-y - z, x + self.a * y, self.b + z * (x - self.c)]
     }
 
     fn rk4_step(&self, state: &[f64; 3]) -> [f64; 3] {
@@ -264,6 +256,9 @@ impl super::Simulator for RosslerSimulator {
             "dt" => self.dt = validation::validate_dt(value),
             _ => {}
         }
+    }
+    fn load_preset(&mut self, name: &str) {
+        RosslerSimulator::load_preset(self, name);
     }
     fn export_data(&self) -> serde_json::Value {
         serde_json::to_value(self.get_state()).unwrap_or_default()

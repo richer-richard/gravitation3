@@ -148,6 +148,30 @@ export function getSimulationInfo(): Record<string, SimulationInfo> {
         strong: "Strong perturbation with rapid mixing",
       },
     },
+    "lid-driven-cavity": {
+      id: "lid-driven-cavity",
+      name: "Lid-Driven Cavity",
+      category: "Fluid Dynamics",
+      accentColor: "#22d3ee",
+      icon: "\u25A3",
+      description:
+        "A square cavity with a moving top wall creates recirculating vortices, shear layers, and corner eddies — the canonical CFD benchmark for validating incompressible solvers.",
+      equations: [
+        { label: "Momentum", html: tex("\\frac{\\partial \\vec{u}}{\\partial t} + (\\vec{u}\\cdot\\nabla)\\vec{u} = -\\nabla p + \\nu\\nabla^2 \\vec{u}") },
+        { label: "Continuity", html: tex("\\nabla \\cdot \\vec{u} = 0") },
+      ],
+      parameters: [
+        { name: "reynolds", symbol: "Re", description: "Inertial-to-viscous ratio" },
+        { name: "lid_velocity", symbol: "U", description: "Velocity of the moving top wall" },
+        { name: "viscosity", symbol: "ν", description: "Kinematic viscosity" },
+      ],
+      presets: {
+        standard: "Benchmark cavity with a primary recirculation cell at Re = 400",
+        laminar: "Low Reynolds flow with a smooth, stable vortex",
+        transition: "Higher Reynolds shear with visible corner eddies",
+        "high-shear": "Fast lid and sharp vorticity layers for stress-testing the solver",
+      },
+    },
     "malkus-waterwheel": {
       id: "malkus-waterwheel",
       name: "Malkus Waterwheel",

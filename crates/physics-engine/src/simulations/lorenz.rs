@@ -32,11 +32,7 @@ struct LyapunovTracker {
 impl LyapunovTracker {
     fn new(initial: [f64; 3], perturbation: f64) -> Self {
         Self {
-            shadow: [
-                initial[0] + perturbation,
-                initial[1],
-                initial[2],
-            ],
+            shadow: [initial[0] + perturbation, initial[1], initial[2]],
             sum_log: 0.0,
             count: 0,
             perturbation,
@@ -85,9 +81,21 @@ pub struct LorenzSimulator {
 impl LorenzSimulator {
     pub fn new(sigma: f64, rho: f64, beta: f64, dt: f64) -> Self {
         Self {
-            sigma: if sigma.is_finite() && sigma >= 0.1 { sigma } else { 10.0 },
-            rho: if rho.is_finite() && rho > 0.0 { rho } else { 28.0 },
-            beta: if beta.is_finite() && beta > 0.0 { beta } else { 8.0 / 3.0 },
+            sigma: if sigma.is_finite() && sigma >= 0.1 {
+                sigma
+            } else {
+                10.0
+            },
+            rho: if rho.is_finite() && rho > 0.0 {
+                rho
+            } else {
+                28.0
+            },
+            beta: if beta.is_finite() && beta > 0.0 {
+                beta
+            } else {
+                8.0 / 3.0
+            },
             dt: validation::validate_dt(dt),
             time: 0.0,
             steps: 0,
@@ -284,6 +292,9 @@ impl super::Simulator for LorenzSimulator {
             "dt" => self.dt = validation::validate_dt(value),
             _ => {}
         }
+    }
+    fn load_preset(&mut self, name: &str) {
+        LorenzSimulator::load_preset(self, name);
     }
     fn export_data(&self) -> serde_json::Value {
         serde_json::to_value(self.get_state()).unwrap_or_default()

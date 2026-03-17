@@ -1,9 +1,11 @@
 export type Provider =
   | "openai"
   | "anthropic"
-  | "gemini"
+  | "google"
   | "deepseek"
-  | "moonshot";
+  | "moonshot"
+  | "qwen"
+  | "minimax";
 export type ModelCapability = "chat" | "thinking" | "vision";
 
 export interface AIModel {

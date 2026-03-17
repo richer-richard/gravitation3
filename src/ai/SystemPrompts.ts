@@ -88,6 +88,21 @@ Key concepts:
 
 Parameters: A (amplitude), ε (epsilon, perturbation), ω (omega, frequency).`,
 
+  "lid-driven-cavity": `${BASE_PROMPT}
+
+You are currently assisting with the **Lid-Driven Cavity** simulation. This is a classic computational fluid dynamics benchmark: a square cavity with a moving top wall, no-slip boundaries, and recirculating vortices.
+
+Key concepts:
+- Incompressible Navier-Stokes flow in a unit square cavity
+- Moving-lid boundary condition drives shear, vorticity generation, and primary/secondary vortices
+- Reynolds number controls the balance of inertia to viscosity
+- Divergence should remain close to zero after projection
+- Flow visualization should focus on recirculation zones, corner eddies, vorticity layers, and numerical stability
+- Particle tracers reveal streamlines and mixing without changing the underlying solver
+
+Parameters: reynolds, lid_velocity, dt, viscosity.
+When analyzing the simulation, comment on separation zones, corner vortices, divergence error, and whether the flow is behaving like a stable benchmark cavity.`,
+
   "malkus-waterwheel": `${BASE_PROMPT}
 
 You are currently assisting with the **Malkus Waterwheel** simulation. This is a mechanical analog of the Lorenz system.

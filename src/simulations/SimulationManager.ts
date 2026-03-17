@@ -13,9 +13,20 @@ export interface SimulationVisualizer {
   resize(): void;
   dispose(): void;
   getCanvas?(): HTMLCanvasElement | null;
+  clearTrails?(): void;
 }
 
 export type SpeedMultiplier = 0.1 | 0.25 | 0.5 | 1 | 2 | 5;
+
+const BASE_STEPS: Record<string, number> = {
+  lorenz: 10,
+  rossler: 8,
+  "double-gyre": 5,
+  "lid-driven-cavity": 2,
+  "double-pendulum": 3,
+  "malkus-waterwheel": 3,
+  "three-body": 2,
+};
 
 export class SimulationManager {
   private bridge: PhysicsBridge;
@@ -24,7 +35,8 @@ export class SimulationManager {
   private animFrameId = 0;
   private running = false;
   private speed: SpeedMultiplier = 1;
-  private stepsPerFrame = 1;
+  private baseStepsPerFrame = 1;
+  private frameCounter = 0;
   private onStateUpdate: ((state: unknown) => void) | null = null;
   private onError: ((error: Error) => void) | null = null;
   private lastState: unknown = null;
@@ -43,6 +55,7 @@ export class SimulationManager {
     this.stop();
     this.simType = simType;
     this.visualizer = visualizer;
+    this.baseStepsPerFrame = BASE_STEPS[simType] ?? 1;
     this.visualizer.init(container);
     await this.bridge.create(simType);
   }
@@ -50,6 +63,8 @@ export class SimulationManager {
   async loadPreset(preset: string): Promise<unknown> {
     const state = await this.bridge.loadPreset(preset);
     this.lastState = state;
+    this.frameCounter = 0;
+    this.visualizer?.clearTrails?.();
     this.visualizer?.update(state);
     this.onStateUpdate?.(state);
     return state;
@@ -61,7 +76,7 @@ export class SimulationManager {
 
   setSpeed(speed: SpeedMultiplier): void {
     this.speed = speed;
-    this.stepsPerFrame = Math.max(1, Math.round(speed));
+    this.frameCounter = 0;
   }
 
   setOnStateUpdate(cb: (state: unknown) => void): void {
@@ -99,13 +114,14 @@ export class SimulationManager {
     this.stop();
     const state = await this.bridge.reset(preset);
     this.lastState = state;
+    this.frameCounter = 0;
     this.visualizer?.update(state);
     this.onStateUpdate?.(state);
     return state;
   }
 
   async stepOnce(): Promise<unknown> {
-    const state = await this.bridge.step(1);
+    const state = await this.bridge.step(this.baseStepsPerFrame);
     this.lastState = state;
     this.visualizer?.update(state);
     this.onStateUpdate?.(state);
@@ -116,12 +132,20 @@ export class SimulationManager {
     return this.lastState;
   }
 
+  getSimType(): SimulationType | null {
+    return this.simType;
+  }
+
   resize(): void {
     this.visualizer?.resize();
   }
 
   getCanvas(): HTMLCanvasElement | null {
     return this.visualizer?.getCanvas?.() ?? null;
+  }
+
+  getVisualizer(): SimulationVisualizer | null {
+    return this.visualizer;
   }
 
   // Simulation-specific methods
@@ -133,6 +157,7 @@ export class SimulationManager {
     const state = await this.bridge.seedParticles(count);
     this.lastState = state;
     this.visualizer?.update(state);
+    this.onStateUpdate?.(state);
     return state;
   }
 
@@ -145,6 +170,7 @@ export class SimulationManager {
     const state = await this.bridge.addPendulum(theta1, omega1, theta2, omega2);
     this.lastState = state;
     this.visualizer?.update(state);
+    this.onStateUpdate?.(state);
     return state;
   }
 
@@ -152,7 +178,38 @@ export class SimulationManager {
     const state = await this.bridge.removePendulum(index);
     this.lastState = state;
     this.visualizer?.update(state);
+    this.onStateUpdate?.(state);
     return state;
+  }
+
+  async addBody(): Promise<unknown> {
+    const state = await this.bridge.addBody();
+    this.lastState = state;
+    this.visualizer?.update(state);
+    this.onStateUpdate?.(state);
+    return state;
+  }
+
+  async removeBody(index: number): Promise<unknown> {
+    const state = await this.bridge.removeBody(index);
+    this.lastState = state;
+    this.visualizer?.update(state);
+    this.onStateUpdate?.(state);
+    return state;
+  }
+
+  private shouldStep(): { doStep: boolean; steps: number } {
+    if (this.speed >= 1) {
+      return { doStep: true, steps: Math.round(this.speed * this.baseStepsPerFrame) };
+    }
+    // Fractional speed: skip frames. speed=0.5 → step every 2nd frame
+    this.frameCounter++;
+    const interval = Math.round(1 / this.speed);
+    if (this.frameCounter >= interval) {
+      this.frameCounter = 0;
+      return { doStep: true, steps: this.baseStepsPerFrame };
+    }
+    return { doStep: false, steps: 0 };
   }
 
   private loop = (): void => {
@@ -163,12 +220,14 @@ export class SimulationManager {
   private tick = async (): Promise<void> => {
     if (!this.running) return;
     try {
-      const steps = this.speed < 1 ? 1 : this.stepsPerFrame;
-      const state = await this.bridge.step(steps);
-      this.consecutiveErrors = 0;
-      this.lastState = state;
-      this.visualizer?.update(state);
-      this.onStateUpdate?.(state);
+      const { doStep, steps } = this.shouldStep();
+      if (doStep && steps > 0) {
+        const state = await this.bridge.step(steps);
+        this.consecutiveErrors = 0;
+        this.lastState = state;
+        this.visualizer?.update(state);
+        this.onStateUpdate?.(state);
+      }
     } catch (err) {
       this.consecutiveErrors++;
       const error = err instanceof Error ? err : new Error(String(err));
