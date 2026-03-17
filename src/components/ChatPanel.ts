@@ -1,6 +1,7 @@
 /**
  * ChatPanel — AI chat interface component.
- * Displays chat messages with markdown rendering, model selector, and input.
+ * Displays chat messages with markdown rendering, model selector, input,
+ * server health check, status pill, and simulation-aware suggestions.
  */
 
 import { ChatManager } from "../ai/ChatManager";
@@ -8,6 +9,46 @@ import type { AIModel, StreamEvent } from "../ai/types";
 import { MODELS, getModelsForProvider } from "../ai/registry";
 import { renderMarkdown } from "./MarkdownRenderer";
 import type { SimulationType } from "../simulations/types";
+
+const LLM_BASE = "http://localhost:5001";
+
+const SIM_SUGGESTIONS: Record<string, string[]> = {
+  "three-body": [
+    "What makes the figure-8 orbit stable?",
+    "How does energy drift affect accuracy?",
+    "Suggest parameters for a chaotic 4-body system",
+  ],
+  "double-pendulum": [
+    "Why is the double pendulum chaotic?",
+    "What is the Lyapunov exponent here?",
+    "How do masses affect chaos onset?",
+  ],
+  lorenz: [
+    "Explain the butterfly effect in this system",
+    "What happens at ρ = 24.74?",
+    "Why are there two attractor lobes?",
+  ],
+  rossler: [
+    "How does the Rössler differ from Lorenz?",
+    "Explain the period-doubling route",
+    "What controls the screw vs funnel type?",
+  ],
+  "double-gyre": [
+    "What role does ε play in mixing?",
+    "How do Lagrangian coherent structures form?",
+    "Explain the transport barriers",
+  ],
+  "lid-driven-cavity": [
+    "What happens at high Reynolds numbers?",
+    "Why do corner vortices form?",
+    "Explain the benchmark Re=400 case",
+  ],
+  "malkus-waterwheel": [
+    "How is this related to the Lorenz system?",
+    "What causes direction reversals?",
+    "Explain the transition to chaos",
+  ],
+};
 
 export class ChatPanel {
   private container: HTMLElement;
@@ -17,6 +58,7 @@ export class ChatPanel {
   private sendBtn!: HTMLButtonElement;
   private modelSelect!: HTMLSelectElement;
   private thinkingToggle!: HTMLInputElement;
+  private statusEl!: HTMLElement;
   private streamingContent = "";
   private streamingThinking = "";
   private streamingEl: HTMLElement | null = null;
@@ -24,6 +66,8 @@ export class ChatPanel {
   private tokenEl: HTMLElement | null = null;
   private stateGetter: (() => unknown) | null = null;
   private onApplyParams: ((params: Record<string, number>) => void) | null = null;
+  private simType: SimulationType = "three-body";
+  private serverOnline = false;
 
   constructor(container: HTMLElement, model: AIModel) {
     this.container = container;
@@ -39,28 +83,37 @@ export class ChatPanel {
   }
 
   setSimulation(sim: SimulationType): void {
+    this.simType = sim;
     this.chatManager.setSimulation(sim);
   }
 
   render(): void {
     this.container.innerHTML = `
-      <div class="flex flex-col h-full">
-        <div class="flex items-center gap-2 p-2 border-b border-zinc-700">
-          <select class="chat-model-select bg-zinc-800 text-zinc-300 text-xs rounded px-2 py-1 border border-zinc-600 flex-1">
-            ${this.buildModelOptions()}
-          </select>
-          <label class="flex items-center gap-1 text-xs text-zinc-400">
-            <input type="checkbox" class="chat-thinking-toggle rounded" />
-            Think
-          </label>
-        </div>
-        <div class="chat-messages flex-1 overflow-y-auto p-3 space-y-3"></div>
-        <div class="chat-token-usage px-3 py-1 text-[10px] text-zinc-600 font-mono border-t border-zinc-700/50 hidden"></div>
-        <div class="p-2 border-t border-zinc-700">
-          <div class="flex gap-2">
-            <textarea class="chat-input flex-1 bg-zinc-800 text-zinc-200 text-sm rounded-lg px-3 py-2 border border-zinc-600 resize-none focus:outline-none focus:border-blue-500" rows="2" placeholder="Ask about the simulation..."></textarea>
-            <button class="chat-send bg-blue-600 hover:bg-blue-500 text-white text-sm px-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">Send</button>
+      <div class="chat-shell">
+        <div class="chat-toolbar">
+          <div class="chat-toolbar-left">
+            <select class="chat-model-select studio-select">
+              ${this.buildModelOptions()}
+            </select>
+            <label class="chat-thinking-label">
+              <input type="checkbox" class="chat-thinking-toggle" />
+              <span>Think</span>
+            </label>
           </div>
+          <div class="chat-toolbar-right">
+            <span class="chat-status" data-status="checking">
+              <span class="chat-status-dot"></span>
+              <span class="chat-status-text">Checking…</span>
+            </span>
+          </div>
+        </div>
+        <div class="chat-messages"></div>
+        <div class="chat-token-usage hidden"></div>
+        <div class="chat-input-area">
+          <textarea class="chat-input" rows="2" placeholder="Ask about the simulation..."></textarea>
+          <button class="chat-send" disabled>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2L7 9"/><path d="M14 2l-5 12-2-5-5-2z"/></svg>
+          </button>
         </div>
       </div>
     `;
@@ -70,6 +123,7 @@ export class ChatPanel {
     this.sendBtn = this.container.querySelector(".chat-send")!;
     this.modelSelect = this.container.querySelector(".chat-model-select")!;
     this.thinkingToggle = this.container.querySelector(".chat-thinking-toggle")!;
+    this.statusEl = this.container.querySelector(".chat-status")!;
     this.tokenEl = this.container.querySelector(".chat-token-usage")!;
 
     this.sendBtn.addEventListener("click", () => this.handleSend());
@@ -79,12 +133,14 @@ export class ChatPanel {
         this.handleSend();
       }
     });
+    this.input.addEventListener("input", () => {
+      this.sendBtn.disabled = !this.input.value.trim();
+    });
 
     this.modelSelect.addEventListener("change", () => {
       const model = MODELS.find((m) => m.id === this.modelSelect.value);
       if (model) {
         this.chatManager.setModel(model);
-        // Update thinking toggle visibility
         this.thinkingToggle.parentElement!.style.display =
           model.capabilities.includes("thinking") ? "flex" : "none";
       }
@@ -97,8 +153,68 @@ export class ChatPanel {
         initModel.capabilities.includes("thinking") ? "flex" : "none";
     }
 
-    // Render persisted messages
-    this.renderPersistedMessages();
+    // Render persisted messages or welcome
+    const messages = this.chatManager.getMessages();
+    const hasUserMessages = messages.some(m => m.role !== "system");
+    if (hasUserMessages) {
+      this.renderPersistedMessages();
+    } else {
+      this.renderWelcome();
+    }
+
+    // Check server health
+    this.checkServerHealth();
+  }
+
+  private async checkServerHealth(): Promise<void> {
+    this.setStatus("checking", "Checking…");
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      const response = await fetch(`${LLM_BASE}/health`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      if (response.ok) {
+        this.serverOnline = true;
+        this.setStatus("online", "Connected");
+      } else {
+        this.serverOnline = false;
+        this.setStatus("offline", "Server Error");
+      }
+    } catch {
+      this.serverOnline = false;
+      this.setStatus("offline", "Offline");
+    }
+  }
+
+  private setStatus(status: "online" | "offline" | "checking", text: string): void {
+    if (!this.statusEl) return;
+    this.statusEl.dataset.status = status;
+    const textEl = this.statusEl.querySelector(".chat-status-text");
+    if (textEl) textEl.textContent = text;
+  }
+
+  private renderWelcome(): void {
+    const suggestions = SIM_SUGGESTIONS[this.simType] || SIM_SUGGESTIONS["three-body"];
+    this.messageList.innerHTML = `
+      <div class="chat-welcome">
+        <div class="chat-welcome-icon">🤖</div>
+        <h4>Simulation Copilot</h4>
+        <p>Ask questions about the physics, request parameter changes, or get insights about the current simulation state.</p>
+        <div class="chat-suggestions">
+          ${suggestions.map(s => `<button class="chat-suggestion">${s}</button>`).join("")}
+        </div>
+      </div>
+    `;
+
+    this.messageList.querySelectorAll<HTMLButtonElement>(".chat-suggestion").forEach(btn => {
+      btn.addEventListener("click", () => {
+        this.input.value = btn.textContent || "";
+        this.sendBtn.disabled = false;
+        this.input.focus();
+      });
+    });
   }
 
   private renderPersistedMessages(): void {
@@ -138,11 +254,25 @@ export class ChatPanel {
     const content = this.input.value.trim();
     if (!content) return;
 
+    // Clear welcome if visible
+    const welcome = this.messageList.querySelector(".chat-welcome");
+    if (welcome) welcome.remove();
+
     this.input.value = "";
     this.sendBtn.disabled = true;
 
     // Add user message to UI
     this.appendMessage("user", content);
+
+    // Check server first
+    if (!this.serverOnline) {
+      await this.checkServerHealth();
+      if (!this.serverOnline) {
+        this.appendMessage("assistant", "**⚠ Server Offline**\n\nThe AI server at `localhost:5001` is not reachable. Please start it and try again.\n\n```bash\ncargo run --manifest-path server/Cargo.toml\n```");
+        this.sendBtn.disabled = false;
+        return;
+      }
+    }
 
     // Stream response
     this.streamingContent = "";
@@ -160,7 +290,10 @@ export class ChatPanel {
         this.handleStreamEvent(event);
       }
     } catch {
-      // Error already added to chat manager
+      if (this.streamingContent === "") {
+        this.streamingContent = "**Connection Error**\n\nFailed to reach the AI server. Please check that the server is running.";
+        this.updateStreamingMessage();
+      }
     }
 
     // Finalize streaming message
@@ -168,7 +301,7 @@ export class ChatPanel {
       this.finalizeStreamingMessage();
     }
 
-    this.sendBtn.disabled = false;
+    this.sendBtn.disabled = !this.input.value.trim();
     this.input.focus();
   }
 
@@ -193,23 +326,26 @@ export class ChatPanel {
 
   private appendMessage(role: string, content: string, thinking?: string): void {
     const el = document.createElement("div");
-    el.className = `chat-message ${role === "user" ? "ml-8" : "mr-4"}`;
+    el.className = `chat-message chat-message-${role}`;
 
     const bubble = document.createElement("div");
-    bubble.className =
-      role === "user"
-        ? "bg-blue-600/20 border border-blue-500/30 rounded-lg p-3 text-sm text-zinc-200"
-        : "bg-zinc-800/50 border border-zinc-700/50 rounded-lg p-3 text-sm text-zinc-200";
+    bubble.className = `chat-bubble chat-bubble-${role}`;
+
+    // Role label
+    const roleLabel = document.createElement("div");
+    roleLabel.className = "chat-role-label";
+    roleLabel.textContent = role === "user" ? "You" : "Copilot";
+    bubble.appendChild(roleLabel);
 
     if (thinking) {
       const thinkEl = document.createElement("details");
-      thinkEl.className = "mb-2";
-      thinkEl.innerHTML = `<summary class="text-xs text-zinc-500 cursor-pointer">Thinking...</summary><div class="text-xs text-zinc-500 mt-1 pl-2 border-l border-zinc-600">${renderMarkdown(thinking)}</div>`;
+      thinkEl.className = "chat-thinking-block";
+      thinkEl.innerHTML = `<summary>Thinking…</summary><div class="chat-thinking-content">${renderMarkdown(thinking)}</div>`;
       bubble.appendChild(thinkEl);
     }
 
     const contentEl = document.createElement("div");
-    contentEl.className = "markdown-body";
+    contentEl.className = "chat-content markdown-body";
     contentEl.innerHTML =
       role === "user" ? escapeHtml(content) : renderMarkdown(content);
     bubble.appendChild(contentEl);
@@ -221,20 +357,24 @@ export class ChatPanel {
 
   private createStreamingMessage(): HTMLElement {
     const el = document.createElement("div");
-    el.className = "chat-message mr-4";
+    el.className = "chat-message chat-message-assistant";
 
     const bubble = document.createElement("div");
-    bubble.className =
-      "bg-zinc-800/50 border border-zinc-700/50 rounded-lg p-3 text-sm text-zinc-200 streaming";
+    bubble.className = "chat-bubble chat-bubble-assistant streaming";
+
+    const roleLabel = document.createElement("div");
+    roleLabel.className = "chat-role-label";
+    roleLabel.textContent = "Copilot";
+    bubble.appendChild(roleLabel);
 
     const thinkEl = document.createElement("details");
-    thinkEl.className = "mb-2 thinking-section hidden";
+    thinkEl.className = "chat-thinking-block thinking-section hidden";
     thinkEl.open = true;
-    thinkEl.innerHTML = `<summary class="text-xs text-zinc-500 cursor-pointer">Thinking...</summary><div class="thinking-content text-xs text-zinc-500 mt-1 pl-2 border-l border-zinc-600"></div>`;
+    thinkEl.innerHTML = `<summary>Thinking…</summary><div class="thinking-content chat-thinking-content"></div>`;
     bubble.appendChild(thinkEl);
 
     const contentEl = document.createElement("div");
-    contentEl.className = "content-section markdown-body";
+    contentEl.className = "content-section chat-content markdown-body";
     bubble.appendChild(contentEl);
 
     el.appendChild(bubble);
@@ -261,7 +401,7 @@ export class ChatPanel {
     }
 
     if (contentSection) {
-      contentSection.innerHTML = renderMarkdown(this.streamingContent) || '<span class="animate-pulse text-zinc-500">...</span>';
+      contentSection.innerHTML = renderMarkdown(this.streamingContent) || '<span class="chat-typing-indicator">●●●</span>';
     }
 
     this.messageList.scrollTop = this.messageList.scrollHeight;
@@ -271,7 +411,7 @@ export class ChatPanel {
     if (!this.tokenEl) return;
     if (this.tokenUsage.input > 0 || this.tokenUsage.output > 0) {
       this.tokenEl.classList.remove("hidden");
-      this.tokenEl.textContent = `Tokens: ${this.tokenUsage.input.toLocaleString()} in / ${this.tokenUsage.output.toLocaleString()} out`;
+      this.tokenEl.textContent = `Tokens: ${this.tokenUsage.input.toLocaleString()} in · ${this.tokenUsage.output.toLocaleString()} out`;
     }
   }
 
@@ -294,13 +434,19 @@ export class ChatPanel {
     try {
       const params = JSON.parse(match[1]) as Record<string, number>;
       const btn = document.createElement("button");
-      btn.className = "mt-2 px-3 py-1 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 text-xs rounded transition-colors";
-      btn.textContent = "Apply Parameters";
+      btn.className = "chat-apply-params";
+      btn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 2l-7 7M6 9l-3 5 5-3"/></svg>
+        Apply Parameters
+      `;
       btn.addEventListener("click", () => {
         this.onApplyParams?.(params);
-        btn.textContent = "Applied!";
+        btn.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 8l4 4 6-8"/></svg>
+          Applied!
+        `;
         btn.disabled = true;
-        btn.className = "mt-2 px-3 py-1 bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 text-xs rounded opacity-60";
+        btn.classList.add("is-applied");
       });
       const bubble = el.querySelector(".content-section") || el.querySelector("div > div");
       bubble?.appendChild(btn);

@@ -1,6 +1,7 @@
 /**
  * ParameterPanel — renders simulation parameter sliders and inputs
- * with tooltips, reset button, and named presets.
+ * with section accent colours, per-slider reset, value tooltips,
+ * named presets, and professional styling.
  */
 
 import type { SimulationType } from "../simulations/types";
@@ -15,50 +16,73 @@ interface ParamDef {
   step: number;
   default: number;
   tooltip?: string;
+  unit?: string;
 }
+
+const SECTION_ACCENTS: Record<string, string> = {
+  Field: "#38bdf8",
+  Solver: "#a78bfa",
+  Dynamics: "#f472b6",
+  Geometry: "#34d399",
+  Masses: "#fb923c",
+  Flow: "#38bdf8",
+  Boundary: "#f59e0b",
+  Wheel: "#34d399",
+};
+
+const SECTION_ICONS: Record<string, string> = {
+  Field: "⊕",
+  Solver: "⟐",
+  Dynamics: "◉",
+  Geometry: "△",
+  Masses: "◆",
+  Flow: "≈",
+  Boundary: "▤",
+  Wheel: "⚙",
+};
 
 const PARAMS: Record<SimulationType, ParamDef[]> = {
   "three-body": [
-    { name: "G", label: "Gravity (G)", section: "Field", min: 0.01, max: 100, step: 0.01, default: 1, tooltip: "Gravitational constant controlling attraction strength" },
-    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.005, tooltip: "Integration timestep — smaller is more accurate but slower" },
+    { name: "G", label: "Gravity (G)", section: "Field", min: 0.01, max: 100, step: 0.01, default: 1, tooltip: "Gravitational constant controlling attraction strength", unit: "" },
+    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.005, tooltip: "Integration timestep — smaller is more accurate but slower", unit: "s" },
   ],
   "double-pendulum": [
-    { name: "g", label: "Gravity (g)", section: "Solver", min: 1, max: 20, step: 0.1, default: 9.81, tooltip: "Gravitational acceleration (m/s²)" },
-    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.02, tooltip: "Integration timestep" },
-    { name: "l1", label: "Length 1", section: "Geometry", min: 0.1, max: 3, step: 0.1, default: 1, tooltip: "Length of the first pendulum arm" },
-    { name: "l2", label: "Length 2", section: "Geometry", min: 0.1, max: 3, step: 0.1, default: 1, tooltip: "Length of the second pendulum arm" },
-    { name: "m1", label: "Mass 1", section: "Masses", min: 0.1, max: 10, step: 0.1, default: 1, tooltip: "Mass of the first bob" },
-    { name: "m2", label: "Mass 2", section: "Masses", min: 0.1, max: 10, step: 0.1, default: 1, tooltip: "Mass of the second bob" },
+    { name: "g", label: "Gravity (g)", section: "Solver", min: 1, max: 20, step: 0.1, default: 9.81, tooltip: "Gravitational acceleration", unit: "m/s²" },
+    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.02, tooltip: "Integration timestep", unit: "s" },
+    { name: "l1", label: "Length 1", section: "Geometry", min: 0.1, max: 3, step: 0.1, default: 1, tooltip: "Length of the first pendulum arm", unit: "m" },
+    { name: "l2", label: "Length 2", section: "Geometry", min: 0.1, max: 3, step: 0.1, default: 1, tooltip: "Length of the second pendulum arm", unit: "m" },
+    { name: "m1", label: "Mass 1", section: "Masses", min: 0.1, max: 10, step: 0.1, default: 1, tooltip: "Mass of the first bob", unit: "kg" },
+    { name: "m2", label: "Mass 2", section: "Masses", min: 0.1, max: 10, step: 0.1, default: 1, tooltip: "Mass of the second bob", unit: "kg" },
   ],
   lorenz: [
     { name: "sigma", label: "Sigma (σ)", section: "Dynamics", min: 0, max: 50, step: 0.1, default: 10, tooltip: "Prandtl number — ratio of momentum to thermal diffusivity" },
     { name: "rho", label: "Rho (ρ)", section: "Dynamics", min: 0, max: 100, step: 0.1, default: 28, tooltip: "Rayleigh number — chaos onset at ρ ≈ 24.74" },
     { name: "beta", label: "Beta (β)", section: "Dynamics", min: 0, max: 20, step: 0.01, default: 2.667, tooltip: "Geometric factor of the convection cell" },
-    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.005, tooltip: "Integration timestep" },
+    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.005, tooltip: "Integration timestep", unit: "s" },
   ],
   rossler: [
     { name: "a", label: "a", section: "Dynamics", min: 0, max: 1, step: 0.01, default: 0.2, tooltip: "Controls rotation speed in the x-y plane" },
     { name: "b", label: "b", section: "Dynamics", min: 0, max: 1, step: 0.01, default: 0.2, tooltip: "Controls the z-axis dynamics" },
     { name: "c", label: "c", section: "Dynamics", min: 0, max: 30, step: 0.1, default: 5.7, tooltip: "Period-doubling route to chaos as c increases" },
-    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.01, tooltip: "Integration timestep" },
+    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.01, tooltip: "Integration timestep", unit: "s" },
   ],
   "double-gyre": [
     { name: "A", label: "Amplitude (A)", section: "Flow", min: 0, max: 1, step: 0.01, default: 0.1, tooltip: "Flow amplitude" },
     { name: "epsilon", label: "Epsilon (ε)", section: "Flow", min: 0, max: 1, step: 0.01, default: 0.25, tooltip: "Perturbation strength — 0 gives steady gyres" },
-    { name: "omega", label: "Omega (ω)", section: "Flow", min: 0, max: 10, step: 0.1, default: 6.283, tooltip: "Oscillation frequency (2π ≈ period of 1)" },
-    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.01, tooltip: "Integration timestep" },
+    { name: "omega", label: "Omega (ω)", section: "Flow", min: 0, max: 10, step: 0.1, default: 6.283, tooltip: "Oscillation frequency (2π ≈ period of 1)", unit: "rad/s" },
+    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.01, tooltip: "Integration timestep", unit: "s" },
   ],
   "lid-driven-cavity": [
     { name: "reynolds", label: "Reynolds Number", section: "Flow", min: 50, max: 5000, step: 10, default: 400, tooltip: "Inertial-to-viscous ratio controlling vortex structure" },
-    { name: "lid_velocity", label: "Lid Velocity", section: "Boundary", min: 0.1, max: 2.5, step: 0.05, default: 1, tooltip: "Speed of the moving top wall" },
-    { name: "viscosity", label: "Viscosity", section: "Flow", min: 0.0001, max: 0.05, step: 0.0001, default: 0.0025, tooltip: "Kinematic viscosity used by the cavity solver" },
-    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.03, step: 0.001, default: 0.01, tooltip: "Solver timestep" },
+    { name: "lid_velocity", label: "Lid Velocity", section: "Boundary", min: 0.1, max: 2.5, step: 0.05, default: 1, tooltip: "Speed of the moving top wall", unit: "m/s" },
+    { name: "viscosity", label: "Viscosity", section: "Flow", min: 0.0001, max: 0.05, step: 0.0001, default: 0.0025, tooltip: "Kinematic viscosity used by the cavity solver", unit: "m²/s" },
+    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.03, step: 0.001, default: 0.01, tooltip: "Solver timestep", unit: "s" },
   ],
   "malkus-waterwheel": [
-    { name: "inflow_rate", label: "Inflow Rate", section: "Wheel", min: 0, max: 20, step: 0.1, default: 5, tooltip: "Water inflow rate at the top" },
-    { name: "leak_rate", label: "Leak Rate", section: "Wheel", min: 0, max: 10, step: 0.1, default: 1, tooltip: "Rate at which water leaks from buckets" },
+    { name: "inflow_rate", label: "Inflow Rate", section: "Wheel", min: 0, max: 20, step: 0.1, default: 5, tooltip: "Water inflow rate at the top", unit: "kg/s" },
+    { name: "leak_rate", label: "Leak Rate", section: "Wheel", min: 0, max: 10, step: 0.1, default: 1, tooltip: "Rate at which water leaks from buckets", unit: "1/s" },
     { name: "damping", label: "Damping", section: "Wheel", min: 0, max: 5, step: 0.01, default: 0.5, tooltip: "Viscous friction on the wheel axle" },
-    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.01, tooltip: "Integration timestep" },
+    { name: "dt", label: "Time Step", section: "Solver", min: 0.001, max: 0.05, step: 0.001, default: 0.01, tooltip: "Integration timestep", unit: "s" },
   ],
 };
 
@@ -92,8 +116,14 @@ export class ParameterPanel {
               <h3 class="studio-section-title">Solver Parameters</h3>
             </div>
             <div class="studio-inline-actions">
-              <button class="param-save-preset studio-chip-button" title="Save current values as preset">Save Preset</button>
-              <button class="param-reset-all studio-chip-button" title="Reset all to defaults">Reset</button>
+              <button class="param-save-preset studio-chip-button" title="Save current values as preset">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg>
+                Save
+              </button>
+              <button class="param-reset-all studio-chip-button" title="Reset all to defaults">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 8a6 6 0 1 1 1.76 4.24"/><path d="M2 12V8h4"/></svg>
+                Reset
+              </button>
             </div>
           </div>
           <div class="param-presets-bar"></div>
@@ -101,10 +131,14 @@ export class ParameterPanel {
         ${sectionOrder
           .map((section) => {
             const sectionParams = params.filter((param) => param.section === section);
+            const accent = SECTION_ACCENTS[section] || "#38bdf8";
+            const icon = SECTION_ICONS[section] || "●";
             return `
-              <div class="studio-section">
-                <div class="studio-subsection-heading">
-                  <p class="studio-subsection-kicker">${section}</p>
+              <div class="studio-section param-section" style="--section-accent: ${accent}">
+                <div class="param-section-header">
+                  <span class="param-section-icon" style="color: ${accent}">${icon}</span>
+                  <span class="param-section-label">${section}</span>
+                  <span class="param-section-count">${sectionParams.length}</span>
                 </div>
                 <div class="studio-slider-list">
                   ${sectionParams.map((param) => this.renderSlider(param)).join("")}
@@ -119,12 +153,12 @@ export class ParameterPanel {
     // Attach listeners
     for (const param of params) {
       this.values.set(param.name, param.default);
-      const slider = this.container.querySelector(
-        `[data-param="${param.name}"] input[type="range"]`
-      ) as HTMLInputElement;
-      const numberInput = this.container.querySelector(
-        `[data-param="${param.name}"] input[type="number"]`
-      ) as HTMLInputElement;
+      const card = this.container.querySelector(`[data-param="${param.name}"]`) as HTMLElement;
+      if (!card) continue;
+
+      const slider = card.querySelector('input[type="range"]') as HTMLInputElement;
+      const numberInput = card.querySelector('input[type="number"]') as HTMLInputElement;
+      const resetBtn = card.querySelector('.param-slider-reset') as HTMLButtonElement;
 
       if (slider && numberInput) {
         slider.addEventListener("input", () => {
@@ -132,6 +166,7 @@ export class ParameterPanel {
           numberInput.value = val.toString();
           this.values.set(param.name, val);
           this.manager.setParameter(param.name, val);
+          this.updateSliderFill(slider);
         });
 
         numberInput.addEventListener("change", () => {
@@ -139,6 +174,22 @@ export class ParameterPanel {
           slider.value = val.toString();
           this.values.set(param.name, val);
           this.manager.setParameter(param.name, val);
+          this.updateSliderFill(slider);
+        });
+
+        // Set initial fill
+        this.updateSliderFill(slider);
+      }
+
+      if (resetBtn) {
+        resetBtn.addEventListener("click", () => {
+          this.values.set(param.name, param.default);
+          if (slider) {
+            slider.value = String(param.default);
+            this.updateSliderFill(slider);
+          }
+          if (numberInput) numberInput.value = String(param.default);
+          this.manager.setParameter(param.name, param.default);
         });
       }
     }
@@ -147,13 +198,14 @@ export class ParameterPanel {
     this.container.querySelector(".param-reset-all")?.addEventListener("click", () => {
       for (const param of params) {
         this.values.set(param.name, param.default);
-        const slider = this.container.querySelector(
-          `[data-param="${param.name}"] input[type="range"]`
-        ) as HTMLInputElement;
-        const numberInput = this.container.querySelector(
-          `[data-param="${param.name}"] input[type="number"]`
-        ) as HTMLInputElement;
-        if (slider) slider.value = String(param.default);
+        const card = this.container.querySelector(`[data-param="${param.name}"]`) as HTMLElement;
+        if (!card) continue;
+        const slider = card.querySelector('input[type="range"]') as HTMLInputElement;
+        const numberInput = card.querySelector('input[type="number"]') as HTMLInputElement;
+        if (slider) {
+          slider.value = String(param.default);
+          this.updateSliderFill(slider);
+        }
         if (numberInput) numberInput.value = String(param.default);
         this.manager.setParameter(param.name, param.default);
       }
@@ -180,31 +232,57 @@ export class ParameterPanel {
       if (!def) continue;
       this.values.set(name, value);
       this.manager.setParameter(name, value);
-      const slider = this.container.querySelector(
-        `[data-param="${name}"] input[type="range"]`
-      ) as HTMLInputElement;
-      const numberInput = this.container.querySelector(
-        `[data-param="${name}"] input[type="number"]`
-      ) as HTMLInputElement;
-      if (slider) slider.value = String(value);
+      const card = this.container.querySelector(`[data-param="${name}"]`) as HTMLElement;
+      if (!card) continue;
+      const slider = card.querySelector('input[type="range"]') as HTMLInputElement;
+      const numberInput = card.querySelector('input[type="number"]') as HTMLInputElement;
+      if (slider) {
+        slider.value = String(value);
+        this.updateSliderFill(slider);
+      }
       if (numberInput) numberInput.value = String(value);
     }
   }
 
+  private updateSliderFill(slider: HTMLInputElement): void {
+    const min = parseFloat(slider.min);
+    const max = parseFloat(slider.max);
+    const val = parseFloat(slider.value);
+    const pct = ((val - min) / (max - min)) * 100;
+    slider.style.setProperty("--slider-pct", `${pct}%`);
+  }
+
   private renderSlider(param: ParamDef): string {
-    const tooltipIcon = param.tooltip
-      ? `<span class="studio-param-hint" title="${param.tooltip}">&#9432;</span>`
-      : "";
+    const accent = SECTION_ACCENTS[param.section] || "#38bdf8";
+    const unitLabel = param.unit ? `<span class="param-unit">${param.unit}</span>` : "";
+    const rangeLabel = `<span class="param-range">${param.min} — ${param.max}</span>`;
+
     return `
-      <div data-param="${param.name}" class="studio-slider-card">
+      <div data-param="${param.name}" class="studio-slider-card" style="--slider-accent: ${accent}">
         <div class="studio-slider-header">
-          <label class="studio-slider-label">${param.label}${tooltipIcon}</label>
-          <input type="number" value="${param.default}" min="${param.min}" max="${param.max}" step="${param.step}"
-            class="studio-slider-value" />
+          <div class="studio-slider-label-group">
+            <label class="studio-slider-label">${param.label}</label>
+            ${param.tooltip ? `<span class="studio-param-hint" title="${param.tooltip}">&#9432;</span>` : ""}
+          </div>
+          <div class="studio-slider-value-group">
+            <input type="number" value="${param.default}" min="${param.min}" max="${param.max}" step="${param.step}"
+              class="studio-slider-value" />
+            ${unitLabel}
+            <button class="param-slider-reset" title="Reset to default (${param.default})" type="button">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 8a6 6 0 1 1 1.76 4.24"/><path d="M2 12V8h4"/></svg>
+            </button>
+          </div>
         </div>
         ${param.tooltip ? `<p class="studio-slider-copy">${param.tooltip}</p>` : ""}
-        <input type="range" value="${param.default}" min="${param.min}" max="${param.max}" step="${param.step}"
-          class="studio-slider-input" />
+        <div class="param-slider-track-wrapper">
+          <input type="range" value="${param.default}" min="${param.min}" max="${param.max}" step="${param.step}"
+            class="studio-slider-input" style="--slider-pct: ${((param.default - param.min) / (param.max - param.min)) * 100}%" />
+          <div class="param-slider-ticks">
+            <span>${param.min}</span>
+            ${rangeLabel}
+            <span>${param.max}</span>
+          </div>
+        </div>
       </div>
     `;
   }
@@ -220,7 +298,10 @@ export class ParameterPanel {
     bar.innerHTML = `
       <div class="studio-preset-strip">
         ${presets.map((name) => `
-          <button class="preset-load studio-pill-button" data-preset-name="${name}">${name}</button>
+          <button class="preset-load studio-pill-button" data-preset-name="${name}">
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8h12M8 2v12"/></svg>
+            ${name}
+          </button>
         `).join("")}
       </div>
     `;

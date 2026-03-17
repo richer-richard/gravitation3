@@ -9,6 +9,7 @@ import { SystemControlPanel } from "../components/SystemControlPanel";
 import { ChatPanel } from "../components/ChatPanel";
 import { MetricsPanel } from "../components/MetricsPanel";
 import { SimInfoPanel } from "../components/SimInfoPanel";
+import { PresetSelector } from "../components/PresetSelector";
 import { MODELS } from "../ai/registry";
 import { showToast } from "../components/Toast";
 import { KeyboardShortcuts } from "../components/KeyboardShortcuts";
@@ -230,9 +231,6 @@ export async function renderSimulation(
   const savedLeft = localStorage.getItem("studio_left_rail") || "320";
   const savedRight = localStorage.getItem("studio_right_rail") || "380";
   const defaultPreset = DEFAULT_PRESETS[type] || "standard";
-  const presetOptions = (PRESETS[type] || [])
-    .map((preset) => `<option value="${preset}"${preset === defaultPreset ? " selected" : ""}>${preset}</option>`)
-    .join("");
 
   container.innerHTML = `
     <div id="studio-shell" class="studio-shell">
@@ -287,11 +285,8 @@ export async function renderSimulation(
                   <h2 class="studio-section-title">Preset Browser</h2>
                 </div>
               </div>
-              <div class="studio-section-copy">Keep the landing page intact and treat this as the production workstation for ${simName.toLowerCase()}.</div>
-              <div class="studio-inline-field">
-                <label for="preset-select">Preset</label>
-                <select id="preset-select" class="studio-select">${presetOptions}</select>
-              </div>
+              <div class="studio-section-copy">Production workstation for ${simName.toLowerCase()}. Select a configuration preset to begin.</div>
+              <div id="preset-selector-mount"></div>
               <div id="action-buttons" class="studio-inline-actions"></div>
             </section>
             <div id="sim-info-mount"></div>
@@ -371,8 +366,28 @@ export async function renderSimulation(
   });
   chatPanel.render();
 
-  const metricsPanel = new MetricsPanel(metricsMount);
+  const metricsPanel = new MetricsPanel(metricsMount, simType);
   metricsPanel.render();
+
+  // Preset selector (custom dropdown replacing native select)
+  const presetSelectorMount = document.getElementById("preset-selector-mount")!;
+  let currentPreset = defaultPreset;
+  const presetSelector = new PresetSelector(
+    presetSelectorMount,
+    simType,
+    defaultPreset,
+    async (presetId: string) => {
+      if (!engineReady) return;
+      manager.stop();
+      setPlayState();
+      currentPreset = presetId;
+      const state = await manager.loadPreset(presetId);
+      updateUiFromState(state);
+      simInfoPanel.updatePreset(presetId);
+      presetBadge.textContent = presetId;
+    }
+  );
+  presetSelector.render();
   let unlistenMenu: (() => void) | null = null;
   let engineReady = false;
   let initError: Error | null = null;
@@ -428,7 +443,6 @@ export async function renderSimulation(
   const btnReset = document.getElementById("btn-reset") as HTMLButtonElement;
   const btnExport = document.getElementById("btn-export") as HTMLButtonElement;
   const btnScreenshot = document.getElementById("btn-screenshot") as HTMLButtonElement;
-  const presetSelect = document.getElementById("preset-select") as HTMLSelectElement;
   const speedSelect = document.getElementById("speed-select") as HTMLSelectElement;
   const requireEngineReady = (): boolean => {
     if (engineReady) {
@@ -457,7 +471,6 @@ export async function renderSimulation(
     btnReset.disabled = true;
     btnExport.disabled = true;
     btnScreenshot.disabled = true;
-    presetSelect.disabled = true;
     speedSelect.disabled = true;
   }
 
@@ -503,20 +516,7 @@ export async function renderSimulation(
     }
     manager.stop();
     setPlayState();
-    const preset = presetSelect.value;
-    const state = await manager.loadPreset(preset);
-    updateUiFromState(state);
-    simInfoPanel.updatePreset(preset);
-    presetBadge.textContent = preset;
-  });
-
-  presetSelect.addEventListener("change", async () => {
-    if (!requireEngineReady()) {
-      return;
-    }
-    manager.stop();
-    setPlayState();
-    const preset = presetSelect.value;
+    const preset = presetSelector.getCurrent();
     const state = await manager.loadPreset(preset);
     updateUiFromState(state);
     simInfoPanel.updatePreset(preset);
@@ -658,6 +658,7 @@ export async function renderSimulation(
     parameterPanel.destroy();
     systemPanel.destroy();
     chatPanel.destroy();
+    presetSelector.destroy();
     metricsPanel.destroy();
   });
 }
