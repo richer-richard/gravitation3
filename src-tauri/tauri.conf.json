@@ -1,46 +1,28 @@
 {
-  "$schema": "https://raw.githubusercontent.com/nicegram/nicegram-core/tauri-v2/core/tauri-config-schema/schema.json",
+  "$schema": "https://raw.githubusercontent.com/nicegui/nicegui/main/node_modules/@nicegui/tauri/config.schema.json",
   "productName": "Gravitation3",
-  "version": "2.0.0",
+  "version": "0.1.0",
   "identifier": "com.gravitation3.desktop",
   "build": {
-    "beforeDevCommand": "npx vite dev --port 3000",
-    "beforeBuildCommand": "npx vite build",
     "frontendDist": "../dist",
-    "devUrl": "http://localhost:3000"
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "pnpm dev:frontend",
+    "beforeBuildCommand": "pnpm build:frontend"
   },
   "app": {
     "windows": [
       {
         "title": "Gravitation3",
-        "width": 1200,
-        "height": 800,
+        "width": 1400,
+        "height": 900,
+        "minWidth": 1024,
+        "minHeight": 700,
+        "decorations": true,
         "maximized": true
       }
     ],
     "security": {
       "csp": null
-    },
-    "macOSPrivateApi": true
-  },
-  "bundle": {
-    "active": true,
-    "targets": "all",
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ]
-  },
-  "plugins": {
-    "dialog": {
-      "all": true
-    },
-    "fs": {
-      "all": true,
-      "scope": ["**"]
     }
   }
 }

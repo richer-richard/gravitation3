@@ -1,0 +1,8 @@
+[package]
+name = "sim-cfd"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+sim-core = { path = "../sim-core" }
+rayon = { workspace = true }

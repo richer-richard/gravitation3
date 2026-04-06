@@ -1,0 +1,8 @@
+{
+  "identifier": "default",
+  "description": "Default capabilities for Gravitation3",
+  "windows": ["main"],
+  "permissions": [
+    "core:default"
+  ]
+}

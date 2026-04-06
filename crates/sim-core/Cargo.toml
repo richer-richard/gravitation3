@@ -1,0 +1,10 @@
+[package]
+name = "sim-core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+glam = { workspace = true }
+rayon = { workspace = true }
+serde = { workspace = true }
+bytemuck = { workspace = true }

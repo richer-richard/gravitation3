@@ -1,24 +1,23 @@
 import { defineConfig } from "vite";
-import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
 
 export default defineConfig({
-  root: "src",
-  publicDir: "../public",
-  plugins: [tailwindcss()],
-  build: {
-    target: "esnext",
-    outDir: "../dist",
-    emptyOutDir: true,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          three: ["three"],
-          katex: ["katex"],
-          hljs: ["highlight.js"],
-          marked: ["marked"],
-        },
-      },
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
     },
   },
-  server: { port: 3000 },
+  clearScreen: false,
+  server: {
+    port: 5173,
+    strictPort: true,
+  },
+  envPrefix: ["VITE_", "TAURI_"],
+  build: {
+    target: "esnext",
+    minify: "esbuild",
+    sourcemap: true,
+  },
 });

@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Font Faces ─────────────────────────────────────────────────────── */
+
+@font-face {
+  font-family: "Space";
+  src: url("./assets/fonts/Space.ttf") format("truetype");
+  font-weight: 100 900;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Sono";
+  src: url("./assets/fonts/Sono.ttf") format("truetype");
+  font-weight: 100 900;
+  font-display: swap;
+  font-style: normal;
+}
+
+/* ── Base Layer ─────────────────────────────────────────────────────── */
+
+@layer base {
+  :root {
+    --void: #000000;
+    --surface: rgba(255, 255, 255, 0.03);
+    --surface-hover: rgba(255, 255, 255, 0.06);
+    --surface-active: rgba(255, 255, 255, 0.09);
+    --border: rgba(255, 255, 255, 0.08);
+    --border-active: rgba(255, 255, 255, 0.15);
+
+    --text-primary: rgba(255, 255, 255, 0.87);
+    --text-secondary: rgba(255, 255, 255, 0.50);
+    --text-tertiary: rgba(255, 255, 255, 0.28);
+
+    --accent-phase: #5bf0d8;
+    --accent-energy: #f857a6;
+    --accent-time: #a78bfa;
+    --accent-stability: #34d399;
+    --accent-chaos: #f97316;
+    --accent-field: #38bdf8;
+
+    --glow-phase: rgba(91, 240, 216, 0.4);
+    --glow-energy: rgba(248, 87, 166, 0.4);
+    --glow-time: rgba(167, 139, 250, 0.4);
+
+    --font-ui: "Space", system-ui, -apple-system, sans-serif;
+    --font-data: "Sono", ui-monospace, monospace;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--void);
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Prevent text selection on UI elements */
+  .no-select {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
+
+/* ── Components Layer ───────────────────────────────────────────────── */
+
+@layer components {
+  .glass-panel {
+    background: rgba(8, 8, 12, 0.72);
+    backdrop-filter: blur(24px) saturate(1.2);
+    -webkit-backdrop-filter: blur(24px) saturate(1.2);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.5),
+      0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  .glass-panel-active {
+    border-top: 1px solid rgba(91, 240, 216, 0.3);
+    box-shadow:
+      0 -1px 12px rgba(91, 240, 216, 0.08),
+      0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  .label {
+    font-family: var(--font-ui);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  .value-mono {
+    font-family: var(--font-data);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+  }
+
+  .title-sm {
+    font-family: var(--font-ui);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    letter-spacing: 0.01em;
+  }
+
+  .transport-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 200ms ease-out;
+  }
+
+  .transport-btn:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+    border-color: var(--border-active);
+  }
+
+  .transport-btn.active {
+    color: var(--accent-phase);
+    border-color: rgba(91, 240, 216, 0.3);
+    box-shadow: 0 0 8px rgba(91, 240, 216, 0.15);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
